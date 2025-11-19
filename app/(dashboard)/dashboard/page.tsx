@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, FileText, LogOut, Download, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface Resume {
   id: string
@@ -171,6 +172,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-3">
+            <ThemeToggle />
             <Button 
               onClick={handleCreateNew}
               className="bg-primary text-primary-foreground hover:bg-primary/90 border-0"

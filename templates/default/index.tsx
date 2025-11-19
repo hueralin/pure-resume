@@ -9,7 +9,7 @@ interface DefaultTemplateProps {
 
 export function DefaultTemplate({ data }: DefaultTemplateProps) {
   return (
-    <div className="p-8 space-y-6" style={{ color: '#1a1a1a' }}>
+    <div className="p-8 space-y-6 text-foreground">
       {data.modules.map((module) => {
         const config = getModuleConfig(module.moduleId)
         if (!config) return null
@@ -17,11 +17,7 @@ export function DefaultTemplate({ data }: DefaultTemplateProps) {
         return (
           <div key={module.instanceId} className="space-y-2">
             <h2 
-              className="text-2xl font-bold border-b-2 pb-2"
-              style={{ 
-                color: '#1a1a1a',
-                borderColor: '#3b82f6'
-              }}
+              className="text-2xl font-bold border-b-2 pb-2 text-foreground border-primary"
             >
               {config.name}
             </h2>
@@ -31,9 +27,9 @@ export function DefaultTemplate({ data }: DefaultTemplateProps) {
                 if (!value) return null
 
                 return (
-                  <div key={field.id} style={{ color: '#1a1a1a' }}>
-                    <span className="font-semibold" style={{ color: '#1a1a1a' }}>{field.label}:</span>{' '}
-                    <span style={{ color: '#1a1a1a' }}>{value}</span>
+                  <div key={field.id} className="text-foreground">
+                    <span className="font-semibold text-foreground">{field.label}:</span>{' '}
+                    <span className="text-foreground">{value}</span>
                   </div>
                 )
               })}
