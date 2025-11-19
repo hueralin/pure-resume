@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Failed to export PDF:', error)
     return NextResponse.json(
-      { error: '导出PDF失败' },
+      { error: error instanceof Error ? error.message : '导出PDF失败' },
       { status: 500 }
     )
   }

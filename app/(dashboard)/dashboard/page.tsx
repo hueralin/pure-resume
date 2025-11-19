@@ -97,7 +97,8 @@ export default function DashboardPage() {
       })
 
       if (!response.ok) {
-        throw new Error('导出失败')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || '导出失败')
       }
 
       // 下载 PDF
