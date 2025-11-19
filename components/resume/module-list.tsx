@@ -22,25 +22,39 @@ function SortableModuleItem({ instanceId, moduleId, onRemove }: { instanceId: st
   }
 
   return (
-    <Card ref={setNodeRef} style={style} className="p-4">
+    <Card 
+      ref={setNodeRef} 
+      style={{
+        ...style,
+        backgroundColor: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: '4px',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+      }} 
+      className="p-2.5"
+    >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             {...attributes}
             {...listeners}
             className="cursor-grab active:cursor-grabbing"
+            style={{ color: '#94a3b8' }}
           >
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
+            <GripVertical className="h-4 w-4" />
           </button>
-          <span className="font-medium">{moduleConfig?.name || moduleId}</span>
+          <span className="font-medium text-sm" style={{ color: '#0f172a' }}>
+            {moduleConfig?.name || moduleId}
+          </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={onRemove}
-          className="h-8 w-8"
+          className="h-6 w-6 hover:bg-gray-100"
+          style={{ color: '#64748b' }}
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
     </Card>
@@ -86,17 +100,34 @@ export function ModuleList() {
 
   if (!currentResume) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">可用模块</h2>
-        <div className="space-y-2">
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold" style={{ color: '#0f172a' }}>可用模块</h2>
+        <div className="space-y-1.5">
           {moduleConfigs.map(config => (
-            <Card key={config.id} className="p-4">
+            <Card 
+              key={config.id} 
+              className="p-2.5"
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '4px',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}
+            >
               <div className="flex items-center justify-between">
-                <span className="font-medium">{config.name}</span>
+                <span className="font-medium text-sm" style={{ color: '#0f172a' }}>{config.name}</span>
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => handleAddModule(config.id)}
+                  style={{
+                    borderColor: '#e5e7eb',
+                    color: '#6366f1',
+                    backgroundColor: 'transparent',
+                    fontSize: '12px',
+                    padding: '2px 8px',
+                    height: '22px'
+                  }}
+                  className="hover:bg-indigo-50"
                 >
                   添加
                 </Button>
@@ -109,9 +140,9 @@ export function ModuleList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <h2 className="text-xl font-semibold mb-4">已添加模块</h2>
+        <h2 className="text-sm font-semibold mb-2" style={{ color: '#0f172a' }}>已添加模块</h2>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -121,7 +152,7 @@ export function ModuleList() {
             items={currentResume.modules.map(m => m.instanceId)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {currentResume.modules.map(module => (
                 <SortableModuleItem
                   key={module.instanceId}
@@ -136,16 +167,33 @@ export function ModuleList() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">可用模块</h2>
-        <div className="space-y-2">
+        <h2 className="text-sm font-semibold mb-2" style={{ color: '#0f172a' }}>可用模块</h2>
+        <div className="space-y-1.5">
           {availableModules.map(config => (
-            <Card key={config.id} className="p-4">
+            <Card 
+              key={config.id} 
+              className="p-2.5"
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '4px',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+              }}
+            >
               <div className="flex items-center justify-between">
-                <span className="font-medium">{config.name}</span>
+                <span className="font-medium text-sm" style={{ color: '#0f172a' }}>{config.name}</span>
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => handleAddModule(config.id)}
+                  style={{
+                    borderColor: '#e5e7eb',
+                    color: '#6366f1',
+                    backgroundColor: 'transparent',
+                    fontSize: '12px',
+                    padding: '2px 8px',
+                    height: '22px'
+                  }}
+                  className="hover:bg-indigo-50"
                 >
                   添加
                 </Button>

@@ -69,14 +69,14 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
     switch (field.type) {
       case 'textarea':
         return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>
+          <div key={field.id} className="space-y-1.5">
+            <Label htmlFor={field.id} className="text-xs">
               {field.label}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <Textarea {...commonProps} />
             {errors[field.id] && (
-              <p className="text-sm text-destructive">
+              <p className="text-xs text-destructive">
                 {errors[field.id]?.message as string}
               </p>
             )}
@@ -87,8 +87,8 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
       case 'text':
       default:
         return (
-          <div key={field.id} className="space-y-2">
-            <Label htmlFor={field.id}>
+          <div key={field.id} className="space-y-1.5">
+            <Label htmlFor={field.id} className="text-xs">
               {field.label}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
@@ -97,7 +97,7 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
               {...commonProps}
             />
             {errors[field.id] && (
-              <p className="text-sm text-destructive">
+              <p className="text-xs text-destructive">
                 {errors[field.id]?.message as string}
               </p>
             )}
@@ -107,8 +107,8 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">{moduleConfig.name}</h3>
+    <div className="space-y-2.5">
+      <h3 className="text-sm font-semibold">{moduleConfig.name}</h3>
       {moduleConfig.fields.map(renderField)}
     </div>
   )

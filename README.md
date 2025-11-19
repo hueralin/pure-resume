@@ -57,7 +57,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-打开 [http://localhost:3000](http://localhost:3000) 查看应用。
+打开 [http://localhost:8000](http://localhost:8000) 查看应用。
 
 ## 功能特性
 

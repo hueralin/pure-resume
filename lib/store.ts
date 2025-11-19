@@ -23,6 +23,7 @@ interface ResumeState {
   addModule: (moduleId: string, instanceId: string, data: Record<string, any>) => void
   removeModule: (instanceId: string) => void
   reorderModules: (instanceIds: string[]) => void
+  clearResume: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -94,5 +95,6 @@ export const useResumeStore = create<ResumeState>((set) => ({
       const modules = instanceIds.map((id) => moduleMap.get(id)!).filter(Boolean)
       return { currentResume: { ...state.currentResume, modules } }
     }),
+  clearResume: () => set({ currentResume: null, currentResumeId: null, currentResumeTitle: null }),
 }))
 

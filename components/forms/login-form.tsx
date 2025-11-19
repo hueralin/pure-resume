@@ -63,19 +63,26 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>登录</CardTitle>
-        <CardDescription>登录您的账号以继续</CardDescription>
+    <Card className="w-full max-w-[400px] bg-card border-border shadow-sm">
+      <CardHeader className="space-y-1 p-6 pb-4">
+        <CardTitle className="text-xl font-semibold text-foreground">
+          登录
+        </CardTitle>
+        <CardDescription className="text-sm text-muted-foreground">
+          登录您的账号以继续
+        </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6 pt-0">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">邮箱</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">
+              邮箱
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="your@email.com"
+              className="w-full h-10 bg-background border-input"
               {...register('email')}
             />
             {errors.email && (
@@ -84,11 +91,14 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+              密码
+            </Label>
             <Input
               id="password"
               type="password"
               placeholder="请输入密码"
+              className="w-full h-10 bg-background border-input"
               {...register('password')}
             />
             {errors.password && (
@@ -100,13 +110,17 @@ export function LoginForm() {
             <p className="text-sm text-destructive">{error}</p>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button 
+            type="submit" 
+            className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
+            disabled={loading}
+          >
             {loading ? '登录中...' : '登录'}
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
             还没有账号？{' '}
-            <a href="/register" className="text-primary hover:underline">
+            <a href="/register" className="text-primary hover:underline font-medium">
               立即注册
             </a>
           </p>

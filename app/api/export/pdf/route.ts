@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/middleware'
 import puppeteer from 'puppeteer'
 import { db } from '@/lib/db'
-import { DefaultTemplateServer } from '@/templates/default/server'
-import React from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
+import { getModuleConfig } from '@/lib/modules'
+import { ResumeData } from '@/types/resume'
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req: NextRequest, userId: string) => {
@@ -31,10 +30,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 渲染 HTML
-    const html = renderToStaticMarkup(
-      React.createElement(DefaultTemplateServer, { data: resume.data as any })
-    )
+    // 生成 HTML 字符串
+    const resumeData = resume.data as ResumeData
+    const htmlContent = generateResumeHTML(resumeData)
 
     const fullHtml = `
       <!DOCTYPE html>
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
             }
           </style>
         </head>
-        <body>${html}</body>
+        <body>${htmlContent}</body>
       </html>
     `
 
@@ -95,5 +93,73 @@ export async function POST(request: NextRequest) {
     )
   }
   })(request)
+}
+
+// 生成简历 HTML 内容的纯函数
+function generateResumeHTML(data: ResumeData): string {
+  if (!data.modules || data.modules.length === 0) {
+    return '<div style="padding: 48px; text-align: center; color: #64748b;">暂无内容</div>'
+  }
+
+  const modulesHTML = data.modules.map((module, index) => {
+    const config = getModuleConfig(module.moduleId)
+    if (!config) return ''
+
+    const fieldsHTML = config.fields
+      .map((field) => {
+        const value = module.data[field.id]
+        if (!value) return ''
+
+        return `
+          <div style="display: flex; flex-direction: row; gap: 16px; margin-bottom: 16px;">
+            <span style="font-weight: 500; font-size: 14px; color: #64748b; min-width: 96px; flex-shrink: 0;">
+              ${escapeHtml(field.label)}
+            </span>
+            <span style="font-size: 16px; color: #1e293b; flex: 1;">
+              ${escapeHtml(String(value))}
+            </span>
+          </div>
+        `
+      })
+      .join('')
+
+    return `
+      <div style="margin-bottom: ${index < data.modules.length - 1 ? '32px' : '0'}; padding-top: ${index > 0 ? '32px' : '0'}; border-top: ${index > 0 ? '1px solid #f1f5f9' : 'none'};">
+        <div style="margin-bottom: 24px;">
+          <h2 style="font-size: 24px; font-weight: 600; color: #0f172a; letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2;">
+            ${escapeHtml(config.name)}
+          </h2>
+          <div style="height: 2px; width: 48px; background-color: #6366f1; border-radius: 1px;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          ${fieldsHTML}
+        </div>
+      </div>
+    `
+  }).join('')
+
+  return `
+    <div style="min-height: 100vh; background-color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <div style="max-width: 896px; margin: 0 auto; padding: 48px 24px;">
+        <div style="background-color: #ffffff; border-radius: 4px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb; overflow: hidden;">
+          <div style="padding: 48px;">
+            ${modulesHTML}
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+// HTML 转义函数
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }
+  return text.replace(/[&<>"']/g, (m) => map[m])
 }
 
