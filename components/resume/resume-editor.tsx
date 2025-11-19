@@ -16,6 +16,8 @@ import { Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+import { Skeleton } from '@/components/ui/skeleton'
+
 export function ResumeEditor() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -176,8 +178,30 @@ export function ResumeEditor() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>加载中...</p>
+      <div className="flex h-screen bg-background">
+        {/* 左侧编辑区 Skeleton */}
+        <div className="w-1/3 p-4 space-y-4 border-r border-border">
+          <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-10 w-20" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-4 mt-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </div>
+        
+        {/* 右侧预览区 Skeleton */}
+        <div className="flex-1 p-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto">
+            <Skeleton className="h-[800px] w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     )
   }

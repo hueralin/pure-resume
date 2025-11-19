@@ -7,7 +7,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/lib/store'
 
@@ -25,12 +32,13 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore((state) => state.setAuth)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
+  const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      name: '',
+    },
   })
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -74,71 +82,85 @@ export function RegisterForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 pt-0">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-foreground">
-              邮箱
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              className="w-full h-10 bg-background border-input"
-              {...register('email')}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>邮箱</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="your@email.com"
+                      type="email"
+                      className="w-full h-10 bg-background border-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>密码</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="至少6位"
+                      className="w-full h-10 bg-background border-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>姓名（可选）</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="您的姓名"
+                      type="text"
+                      className="w-full h-10 bg-background border-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
-              密码
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="至少6位"
-              className="w-full h-10 bg-background border-input"
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
+            <Button 
+              type="submit" 
+              className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
+              disabled={loading}
+            >
+              {loading ? '注册中...' : '注册'}
+            </Button>
 
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-foreground">
-              姓名（可选）
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="您的姓名"
-              className="w-full h-10 bg-background border-input"
-              {...register('name')}
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <Button 
-            type="submit" 
-            className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
-            disabled={loading}
-          >
-            {loading ? '注册中...' : '注册'}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            已有账号？{' '}
-            <a href="/login" className="text-primary hover:underline font-medium">
-              立即登录
-            </a>
-          </p>
-        </form>
+            <p className="text-center text-sm text-muted-foreground">
+              已有账号？{' '}
+              <a href="/login" className="text-primary hover:underline font-medium">
+                立即登录
+              </a>
+            </p>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )

@@ -8,6 +8,18 @@ import { Button } from '@/components/ui/button'
 import { Plus, FileText, LogOut, Download, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface Resume {
   id: string
@@ -104,64 +116,67 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDelete = async (e: React.MouseEvent, resumeId: string, resumeTitle: string) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation() // 阻止事件冒泡，避免触发卡片点击
-    
-    // 使用 toast 确认删除
-    toast(`确定要删除简历"${resumeTitle}"吗？`, {
-      description: '此操作无法撤销',
-      action: {
-        label: '删除',
-        onClick: async () => {
-          setDeletingResumeId(resumeId)
-          
-          try {
-            const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
-            if (!authToken) {
-              toast.error('请先登录')
-              return
-            }
+    if (!deletingResumeId) return
 
-            const response = await fetch(`/api/resumes/${resumeId}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-              },
-            })
+    try {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+      if (!authToken) {
+        toast.error('请先登录')
+        return
+      }
 
-            if (!response.ok) {
-              const error = await response.json()
-              throw new Error(error.error || '删除失败')
-            }
-
-            // 从列表中移除已删除的简历
-            setResumes(resumes.filter(r => r.id !== resumeId))
-            toast.success('删除成功')
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : '删除简历失败，请稍后重试')
-          } finally {
-            setDeletingResumeId(null)
-          }
+      const response = await fetch(`/api/resumes/${deletingResumeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
         },
-      },
-      cancel: {
-        label: '取消',
-        onClick: () => {},
-      },
-    })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || '删除失败')
+      }
+
+      // 从列表中移除已删除的简历
+      setResumes(resumes.filter(r => r.id !== deletingResumeId))
+      toast.success('删除成功')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '删除简历失败，请稍后重试')
+    } finally {
+      setDeletingResumeId(null)
+    }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>加载中...</p>
+      <div className="min-h-screen p-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-10 rounded-md" />
+              <Skeleton className="h-10 w-24 rounded-md" />
+              <Skeleton className="h-10 w-20 rounded-md" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen p-6 bg-background text-foreground">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-foreground">
@@ -234,21 +249,48 @@ export default function DashboardPage() {
                   className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
+                  <Button
+                    variant="outline"
+                    size="icon"
                     onClick={(e) => handleDownload(e, resume.id)}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border border-border text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border-border hover:bg-accent hover:text-accent-foreground"
                     title="下载PDF"
                   >
                     <Download className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={(e) => handleDelete(e, resume.id, resume.title)}
-                    disabled={deletingResumeId === resume.id}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm border border-border text-destructive hover:bg-destructive/10 hover:border-destructive/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="删除简历"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeletingResumeId(resume.id)
+                        }}
+                        className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border-border text-destructive hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive"
+                        title="删除简历"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确定要删除简历&ldquo;{resume.title}&rdquo;吗？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          此操作无法撤销。这将永久删除您的简历数据。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={(e) => {
+                            e.stopPropagation()
+                            setDeletingResumeId(null)
+                        }}>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}

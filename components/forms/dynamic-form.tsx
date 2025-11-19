@@ -4,8 +4,15 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { ModuleConfig, ModuleField } from '@/lib/modules'
 import { useEffect } from 'react'
 
@@ -39,15 +46,12 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
 
   type FormData = z.infer<typeof schema>
 
-  const {
-    register,
-    watch,
-    formState: { errors },
-  } = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: initialData || {},
   })
 
+  const { watch } = form
   const formData = watch()
 
   // 防抖更新
@@ -59,58 +63,42 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
     return () => clearTimeout(timer)
   }, [formData, onChange])
 
-  const renderField = (field: ModuleField) => {
-    const commonProps = {
-      id: field.id,
-      placeholder: field.placeholder,
-      ...register(field.id),
-    }
-
-    switch (field.type) {
-      case 'textarea':
-        return (
-          <div key={field.id} className="space-y-1.5">
-            <Label htmlFor={field.id} className="text-xs">
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
-            <Textarea {...commonProps} />
-            {errors[field.id] && (
-              <p className="text-xs text-destructive">
-                {errors[field.id]?.message as string}
-              </p>
-            )}
-          </div>
-        )
-      case 'email':
-      case 'tel':
-      case 'text':
-      default:
-        return (
-          <div key={field.id} className="space-y-1.5">
-            <Label htmlFor={field.id} className="text-xs">
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </Label>
-            <Input
-              type={field.type}
-              {...commonProps}
-            />
-            {errors[field.id] && (
-              <p className="text-xs text-destructive">
-                {errors[field.id]?.message as string}
-              </p>
-            )}
-          </div>
-        )
-    }
-  }
-
   return (
-    <div className="space-y-2.5">
-      <h3 className="text-sm font-semibold">{moduleConfig.name}</h3>
-      {moduleConfig.fields.map(renderField)}
-    </div>
+    <Form {...form}>
+      <div className="space-y-2.5">
+        <h3 className="text-sm font-semibold">{moduleConfig.name}</h3>
+        {moduleConfig.fields.map((field) => (
+          <FormField
+            key={field.id}
+            control={form.control}
+            name={field.id}
+            render={({ field: formField }) => (
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-xs">
+                  {field.label}
+                  {field.required && <span className="text-destructive ml-1">*</span>}
+                </FormLabel>
+                <FormControl>
+                  {field.type === 'textarea' ? (
+                    <Textarea 
+                      placeholder={field.placeholder} 
+                      {...formField} 
+                    />
+                  ) : (
+                    <Input
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      {...formField}
+                    />
+                  )}
+                </FormControl>
+                <FormMessage className="text-xs" />
+              </FormItem>
+            )}
+          />
+        ))}
+      </div>
+    </Form>
   )
 }
 

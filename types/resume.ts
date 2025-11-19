@@ -4,7 +4,11 @@ export interface ResumeModuleData {
   data: Record<string, any>
 }
 
-export interface ResumeData {
-  modules: ResumeModuleData[]
+export interface ResumeGlobalSettings {
+  themeColor?: string
 }
 
+export interface ResumeData {
+  globalSettings?: ResumeGlobalSettings
+  modules: ResumeModuleData[]
+}

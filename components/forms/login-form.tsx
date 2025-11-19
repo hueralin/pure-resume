@@ -7,7 +7,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/lib/store'
 
@@ -24,12 +31,12 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore((state) => state.setAuth)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   })
 
   const onSubmit = async (data: LoginFormData) => {
@@ -73,58 +80,66 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 pt-0">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-foreground">
-              邮箱
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              className="w-full h-10 bg-background border-input"
-              {...register('email')}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>邮箱</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="your@email.com"
+                      type="email"
+                      className="w-full h-10 bg-background border-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
-              密码
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="请输入密码"
-              className="w-full h-10 bg-background border-input"
-              {...register('password')}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>密码</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="请输入密码"
+                      className="w-full h-10 bg-background border-input"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
+
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
             )}
-          </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+            <Button 
+              type="submit" 
+              className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
+              disabled={loading}
+            >
+              {loading ? '登录中...' : '登录'}
+            </Button>
 
-          <Button 
-            type="submit" 
-            className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
-            disabled={loading}
-          >
-            {loading ? '登录中...' : '登录'}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            还没有账号？{' '}
-            <a href="/register" className="text-primary hover:underline font-medium">
-              立即注册
-            </a>
-          </p>
-        </form>
+            <p className="text-center text-sm text-muted-foreground">
+              还没有账号？{' '}
+              <a href="/register" className="text-primary hover:underline font-medium">
+                立即注册
+              </a>
+            </p>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )
