@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Plus, FileText, LogOut, Download, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -33,6 +35,11 @@ export default function ResumeListPage() {
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingResumeId, setDeletingResumeId] = useState<string | null>(null)
+  
+  // 新建简历相关状态
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [newResumeTitle, setNewResumeTitle] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     if (!token) {
@@ -70,7 +77,51 @@ export default function ResumeListPage() {
   }
 
   const handleCreateNew = () => {
-    router.push('/resume/new')
+    setNewResumeTitle('')
+    setIsCreateOpen(true)
+  }
+
+  const handleCreateConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault() // 阻止默认关闭行为
+    
+    if (!newResumeTitle.trim()) {
+      toast.error('请输入简历名称')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+        const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+        if (!authToken) {
+          toast.error('请先登录')
+          return
+        }
+
+        const response = await fetch('/api/resumes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            title: newResumeTitle,
+            data: { modules: [] }, // 初始为空模块列表
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || '创建失败')
+        }
+
+        const newResume = await response.json()
+        toast.success('创建成功')
+        setIsCreateOpen(false)
+        router.push(`/resume/${newResume.id}`)
+    } catch (error: any) {
+       toast.error(error.message || '创建失败，请稍后重试')
+       setIsCreating(false) // 只有失败才重置 loading，成功了就直接跳转了
+    }
   }
 
   const handleEdit = (id: string) => {
@@ -297,8 +348,46 @@ export default function ResumeListPage() {
             ))}
           </div>
         )}
+        
+        {/* 新建简历弹窗 */}
+        <AlertDialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>创建新简历</AlertDialogTitle>
+              <AlertDialogDescription>
+                给您的简历起个名字，例如"前端开发工程师"或"产品经理"
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="resume-name">简历名称</Label>
+                <Input 
+                  id="resume-name" 
+                  placeholder="请输入简历名称" 
+                  value={newResumeTitle}
+                  onChange={(e) => setNewResumeTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isCreating) {
+                      // 创建一个合成事件或者直接调用 handleCreateConfirm
+                      // 因为 handleCreateConfirm 需要 MouseEvent，我们这里可以伪造一个或者修改 handler 定义
+                      // 简单起见，修改 handler 类型或忽略类型检查，或者用 any
+                      handleCreateConfirm(e as any)
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isCreating}>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCreateConfirm} disabled={isCreating} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                {isCreating ? '创建中...' : '确定'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </div>
     </div>
   )
 }
-
