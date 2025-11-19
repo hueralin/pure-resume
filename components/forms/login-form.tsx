@@ -61,7 +61,7 @@ export function LoginForm() {
       setAuth(result.user, result.token)
       
       // 跳转到简历列表
-      router.push('/dashboard')
+      router.push('/resume')
     } catch (err) {
       setError('网络错误，请稍后重试')
     } finally {

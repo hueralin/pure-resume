@@ -27,7 +27,7 @@ interface Resume {
   updatedAt: string
 }
 
-export default function DashboardPage() {
+export default function ResumeListPage() {
   const router = useRouter()
   const { user, token, clearAuth } = useAuthStore()
   const [resumes, setResumes] = useState<Resume[]>([])
@@ -70,11 +70,11 @@ export default function DashboardPage() {
   }
 
   const handleCreateNew = () => {
-    router.push('/editor')
+    router.push('/resume/new')
   }
 
   const handleEdit = (id: string) => {
-    router.push(`/editor?id=${id}`)
+    router.push(`/resume/${id}`)
   }
 
   const handleDownload = async (e: React.MouseEvent, resumeId: string) => {

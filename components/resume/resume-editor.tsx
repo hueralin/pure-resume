@@ -18,10 +18,10 @@ import { toast } from 'sonner'
 
 import { Skeleton } from '@/components/ui/skeleton'
 
-export function ResumeEditor() {
+export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const resumeId = searchParams.get('id')
+  const resumeId = propResumeId || searchParams.get('id')
   const { currentResume, currentResumeId, currentResumeTitle, updateModuleData, setCurrentResume, clearResume } = useResumeStore()
   const { token } = useAuthStore()
   const [loading, setLoading] = useState(false)
@@ -71,7 +71,7 @@ export function ResumeEditor() {
     const loadResume = async () => {
       // 如果已经有当前简历且ID匹配，则不重新加载（除非是为了刷新）
       // 但为了解决用户反馈的“脏数据”问题，我们应该强制加载
-      if (!resumeId) return 
+      if (!resumeId || resumeId === 'new') return 
 
       if (currentResumeId === resumeId && !isDirty) return
 
@@ -111,7 +111,7 @@ export function ResumeEditor() {
 
   // 如果没有 resumeId 且没有当前简历，初始化空简历
   useEffect(() => {
-    if (!resumeId && !currentResume) {
+    if ((!resumeId || resumeId === 'new') && !currentResume) {
       setCurrentResume({ modules: [] }, null, null)
       setResumeTitle('我的简历')
     }
@@ -168,8 +168,8 @@ export function ResumeEditor() {
       setIsDirty(false) // 保存成功后重置脏状态
       toast.success('保存成功')
       
-      if (!resumeId) {
-        router.push(`/editor?id=${savedResume.id}`)
+      if (!resumeId || resumeId === 'new') {
+        router.replace(`/resume/${savedResume.id}`)
       }
     } catch (error: any) {
       toast.error(error.message || '保存失败，请稍后重试')
