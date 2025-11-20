@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, FileText, LogOut, Download, Trash2 } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -20,8 +19,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { ResumeCard } from '@/components/resume/resume-card'
+import { AddResumeCard } from '@/components/resume/add-resume-card'
 
 interface Resume {
   id: string
@@ -31,10 +31,9 @@ interface Resume {
 
 export default function ResumeListPage() {
   const router = useRouter()
-  const { user, token, clearAuth } = useAuthStore()
+  const { token, clearAuth } = useAuthStore()
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
-  const [deletingResumeId, setDeletingResumeId] = useState<string | null>(null)
   
   // 新建简历相关状态
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -118,19 +117,13 @@ export default function ResumeListPage() {
         toast.success('创建成功')
         setIsCreateOpen(false)
         router.push(`/resume/${newResume.id}`)
-    } catch (error: any) {
-       toast.error(error.message || '创建失败，请稍后重试')
+    } catch (error) {
+       toast.error(error instanceof Error ? error.message : '创建失败，请稍后重试')
        setIsCreating(false) // 只有失败才重置 loading，成功了就直接跳转了
     }
   }
 
-  const handleEdit = (id: string) => {
-    router.push(`/resume/${id}`)
-  }
-
-  const handleDownload = async (e: React.MouseEvent, resumeId: string) => {
-    e.stopPropagation() // 阻止事件冒泡，避免触发卡片点击
-    
+  const handleDownload = async (resumeId: string) => {
     try {
       const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
       if (!authToken) {
@@ -168,10 +161,7 @@ export default function ResumeListPage() {
     }
   }
 
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation() // 阻止事件冒泡，避免触发卡片点击
-    if (!deletingResumeId) return
-
+  const handleDelete = async (resumeId: string) => {
     try {
       const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
       if (!authToken) {
@@ -179,7 +169,7 @@ export default function ResumeListPage() {
         return
       }
 
-      const response = await fetch(`/api/resumes/${deletingResumeId}`, {
+      const response = await fetch(`/api/resumes/${resumeId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -192,33 +182,21 @@ export default function ResumeListPage() {
       }
 
       // 从列表中移除已删除的简历
-      setResumes(resumes.filter(r => r.id !== deletingResumeId))
+      setResumes(resumes.filter(r => r.id !== resumeId))
       toast.success('删除成功')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '删除简历失败，请稍后重试')
-    } finally {
-      setDeletingResumeId(null)
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6 bg-background">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-4 w-48" />
-            </div>
-            <div className="flex gap-3">
-              <Skeleton className="h-10 w-10 rounded-md" />
-              <Skeleton className="h-10 w-24 rounded-md" />
-              <Skeleton className="h-10 w-20 rounded-md" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-[141px] pt-[60px]">
+          <Skeleton className="h-9 w-32 mb-[68px]" />
+          <div className="flex gap-[13px]">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-80 w-60 rounded" />
             ))}
           </div>
         </div>
@@ -227,30 +205,19 @@ export default function ResumeListPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-background text-foreground">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">
-              我的简历
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              欢迎，{user?.name || user?.email}
-            </p>
-          </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-[141px] pt-[60px]">
+        {/* 标题区域 */}
+        <div className="flex items-center justify-between mb-[24px]">
+          <h1 className="text-[36px] font-normal text-foreground">
+            我的简历
+          </h1>
           <div className="flex gap-3">
             <ThemeToggle />
             <Button 
-              onClick={handleCreateNew}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 border-0"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              新建简历
-            </Button>
-            <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
             >
               <LogOut className="h-4 w-4 mr-2" />
               退出
@@ -258,96 +225,22 @@ export default function ResumeListPage() {
           </div>
         </div>
 
-        {resumes.length === 0 ? (
-          <Card className="bg-card border-border shadow-none">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 mb-4 text-muted-foreground/50" />
-              <p className="mb-6 text-sm text-muted-foreground">还没有简历，创建一个吧</p>
-              <Button 
-                onClick={handleCreateNew}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                创建简历
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {resumes.map((resume) => (
-              <div
-                key={resume.id}
-                className="group relative cursor-pointer transition-all duration-200 hover:scale-[1.01] bg-card border border-border rounded overflow-hidden hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-                onClick={() => handleEdit(resume.id)}
-              >
-                <div className="p-5">
-                  <h3 className="font-medium mb-2 text-foreground text-base leading-snug">
-                    {resume.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    更新于 {new Date(resume.updatedAt).toLocaleString('zh-CN', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    })}
-                  </p>
-                </div>
-
-                {/* 悬浮操作按钮 */}
-                <div 
-                  className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={(e) => handleDownload(e, resume.id)}
-                    className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border-border hover:bg-accent hover:text-accent-foreground"
-                    title="下载PDF"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDeletingResumeId(resume.id)
-                        }}
-                        className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border-border text-destructive hover:bg-destructive/10 hover:border-destructive/20 hover:text-destructive"
-                        title="删除简历"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>确定要删除简历&ldquo;{resume.title}&rdquo;吗？</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          此操作无法撤销。这将永久删除您的简历数据。
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={(e) => {
-                            e.stopPropagation()
-                            setDeletingResumeId(null)
-                        }}>取消</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          删除
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex gap-[13px] flex-wrap">
+          {/* 固定的添加简历卡片 */}
+          <AddResumeCard onClick={handleCreateNew} />
+          
+          {/* 简历列表 */}
+          {resumes.map((resume) => (
+            <ResumeCard
+              key={resume.id}
+              id={resume.id}
+              title={resume.title}
+              updatedAt={resume.updatedAt}
+              onDelete={handleDelete}
+              onDownload={handleDownload}
+            />
+          ))}
+        </div>
         
         {/* 新建简历弹窗 */}
         <AlertDialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -355,7 +248,7 @@ export default function ResumeListPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>创建新简历</AlertDialogTitle>
               <AlertDialogDescription>
-                给您的简历起个名字，例如"前端开发工程师"或"产品经理"
+                给您的简历起个名字，例如&ldquo;前端开发工程师&rdquo;或&ldquo;产品经理&rdquo;
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4">
@@ -368,10 +261,7 @@ export default function ResumeListPage() {
                   onChange={(e) => setNewResumeTitle(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !isCreating) {
-                      // 创建一个合成事件或者直接调用 handleCreateConfirm
-                      // 因为 handleCreateConfirm 需要 MouseEvent，我们这里可以伪造一个或者修改 handler 定义
-                      // 简单起见，修改 handler 类型或忽略类型检查，或者用 any
-                      handleCreateConfirm(e as any)
+                      handleCreateConfirm(e as unknown as React.MouseEvent)
                     }
                   }}
                   autoFocus

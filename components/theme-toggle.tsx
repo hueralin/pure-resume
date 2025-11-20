@@ -19,7 +19,7 @@ export function ThemeToggle() {
       <Button
         variant="outline"
         size="icon"
-        className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
         disabled
       >
         <Sun className="h-4 w-4" />
@@ -32,7 +32,7 @@ export function ThemeToggle() {
       variant="outline"
       size="icon"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
       title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
     >
       {theme === 'dark' ? (
