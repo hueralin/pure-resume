@@ -113,13 +113,16 @@ export default function ResumeListPage() {
           throw new Error(error.error || '创建失败')
         }
 
-        const newResume = await response.json()
+        await response.json()
         toast.success('创建成功')
         setIsCreateOpen(false)
-        router.push(`/resume/${newResume.id}`)
+        setNewResumeTitle('')
+        setIsCreating(false)
+        // 刷新简历列表
+        await fetchResumes()
     } catch (error) {
        toast.error(error instanceof Error ? error.message : '创建失败，请稍后重试')
-       setIsCreating(false) // 只有失败才重置 loading，成功了就直接跳转了
+       setIsCreating(false)
     }
   }
 
@@ -191,10 +194,10 @@ export default function ResumeListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-[141px] pt-[60px]">
-          <Skeleton className="h-9 w-32 mb-[68px]" />
-          <div className="flex gap-[13px]">
+      <div className="min-h-screen bg-background overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
+          <Skeleton className="h-9 w-32 mb-[24px]" />
+          <div className="grid grid-cols-4 gap-[13px] min-w-[1000px]">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-80 w-60 rounded" />
             ))}
@@ -205,8 +208,8 @@ export default function ResumeListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-[141px] pt-[60px]">
+    <div className="min-h-screen bg-background overflow-x-auto">
+      <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
         {/* 标题区域 */}
         <div className="flex items-center justify-between mb-[24px]">
           <h1 className="text-[36px] font-normal text-foreground">
@@ -225,7 +228,7 @@ export default function ResumeListPage() {
           </div>
         </div>
 
-        <div className="flex gap-[13px] flex-wrap">
+        <div className="grid grid-cols-4 gap-[13px] min-w-[1000px]">
           {/* 固定的添加简历卡片 */}
           <AddResumeCard onClick={handleCreateNew} />
           
