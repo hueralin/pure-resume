@@ -194,7 +194,7 @@ export default function ResumeListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background overflow-x-auto">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
           <Skeleton className="h-9 w-32 mb-[24px]" />
           <div className="grid grid-cols-4 gap-[13px] min-w-[1000px]">
@@ -208,7 +208,7 @@ export default function ResumeListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-auto">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
         {/* 标题区域 */}
         <div className="flex items-center justify-between mb-[24px]">
@@ -221,9 +221,9 @@ export default function ResumeListPage() {
               variant="outline" 
               onClick={handleLogout}
               className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              title="退出登录"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              退出
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>

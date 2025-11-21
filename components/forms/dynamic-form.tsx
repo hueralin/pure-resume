@@ -48,7 +48,11 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: initialData || {},
+    defaultValues: moduleConfig.fields.reduce((acc, field) => {
+      // 确保每个字段都有默认值，避免 uncontrolled -> controlled 错误
+      acc[field.id] = initialData?.[field.id] ?? ''
+      return acc
+    }, {} as Record<string, any>),
   })
 
   const { watch } = form

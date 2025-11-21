@@ -75,9 +75,6 @@ export function LoginForm() {
         <CardTitle className="text-xl font-semibold text-foreground">
           登录
         </CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          登录您的账号以继续
-        </CardDescription>
       </CardHeader>
       <CardContent className="p-6 pt-0">
         <Form {...form}>

@@ -77,9 +77,6 @@ export function RegisterForm() {
         <CardTitle className="text-xl font-semibold text-foreground">
           注册账号
         </CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          创建您的账号以开始制作简历
-        </CardDescription>
       </CardHeader>
       <CardContent className="p-6 pt-0">
         <Form {...form}>
