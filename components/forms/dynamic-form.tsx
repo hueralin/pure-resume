@@ -6,6 +6,14 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
+import {
   Form,
   FormControl,
   FormField,
@@ -34,11 +42,8 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
         fieldSchema = z.string().regex(/^[\d\s\-+()]+$/, '电话号码格式不正确')
       }
       
-      if (field.required) {
-        acc[field.id] = fieldSchema.min(1, `${field.label}不能为空`)
-      } else {
-        acc[field.id] = fieldSchema.optional()
-      }
+      // 所有字段都是可选的（除了简历名称，但简历名称不在模块配置中）
+      acc[field.id] = fieldSchema.optional()
       
       return acc
     }, {} as Record<string, z.ZodTypeAny>)
@@ -79,7 +84,6 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
               <FormItem className="space-y-1.5">
                 <FormLabel className="text-xs font-medium text-white mb-3 block">
                   {field.label}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
                 </FormLabel>
                 <FormControl>
                   {field.type === 'textarea' ? (
@@ -87,6 +91,35 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
                       placeholder={field.placeholder} 
                       {...formField}
                       className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded min-h-[40px] h-auto px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A] resize-none"
+                    />
+                  ) : field.type === 'select' ? (
+                    <Select
+                      value={formField.value || ''}
+                      onValueChange={formField.onChange}
+                    >
+                      <SelectTrigger className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus:ring-1 focus:ring-[#27272A] focus:border-[#27272A]">
+                        <SelectValue placeholder={field.placeholder || '请选择'} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#09090B] border border-[#27272A] text-white">
+                        {field.options?.map((option) => (
+                          <SelectItem 
+                            key={option} 
+                            value={option}
+                            className="focus:bg-[#27272A] focus:text-white"
+                          >
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : field.type === 'date' ? (
+                    <DatePicker
+                      value={formField.value ? new Date(formField.value) : undefined}
+                      onChange={(date) => {
+                        formField.onChange(date ? date.toISOString().split('T')[0] : '')
+                      }}
+                      placeholder={field.placeholder || '选择日期'}
+                      className="bg-[#09090B] border border-[#27272A] text-white w-full h-10 px-3 text-sm"
                     />
                   ) : (
                     <Input

@@ -3,13 +3,14 @@
   "name": "基本信息",
   "icon": "User",
   "allowMultiple": false,
+  "unique": true,
   "order": 1,
   "fields": [
     {
       "id": "name",
       "label": "姓名",
       "type": "text",
-      "required": true,
+      "required": false,
       "placeholder": "请输入姓名"
     },
     {

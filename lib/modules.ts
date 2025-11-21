@@ -1,4 +1,5 @@
 import basicInfoConfig from '@/config/modules/basic-info.json'
+import educationConfig from '@/config/modules/education.json'
 
 export interface ModuleField {
   id: string
@@ -13,14 +14,18 @@ export interface ModuleConfig {
   id: string
   name: string
   icon: string
-  allowMultiple: boolean
+  allowMultiple: boolean // 模块内部是否可以添加多个子项（如教育经历模块可以添加多个教育经历项）
+  unique?: boolean // 模块是否可以重复添加（默认 true，即只能添加一次）
   order: number
   fields: ModuleField[]
 }
 
 // 加载所有模块配置
 export function loadModuleConfigs(): ModuleConfig[] {
-  return [basicInfoConfig as ModuleConfig]
+  return [
+    basicInfoConfig as ModuleConfig,
+    educationConfig as ModuleConfig,
+  ].sort((a, b) => a.order - b.order)
 }
 
 export function getModuleConfig(moduleId: string): ModuleConfig | undefined {

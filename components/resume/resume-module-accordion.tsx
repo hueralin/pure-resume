@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/accordion'
 import { GripVertical, X, ChevronDown } from 'lucide-react'
 import { DynamicForm } from '@/components/forms/dynamic-form'
+import { EducationForm } from '@/components/forms/education-form'
 import { getModuleConfig } from '@/lib/modules'
 import { ResumeModuleData } from '@/types/resume'
 import { useResumeStore } from '@/lib/store'
@@ -31,17 +32,17 @@ function SortableModuleAccordionItem({ module, onRemove }: ResumeModuleAccordion
     transition,
   }
 
-  const handleFormChange = (data: Record<string, any>) => {
+  const handleFormChange = (data: Record<string, unknown> | { items: unknown[] }) => {
     updateModuleData(module.instanceId, data)
   }
 
   if (!moduleConfig) return null
 
   return (
-    <div ref={setNodeRef} style={style} className="mb-0">
+    <div ref={setNodeRef} style={style} className="mb-4">
       <AccordionItem
         value={module.instanceId}
-        className="border border-[#27272A] bg-[#09090B] rounded mb-0"
+        className="border border-[#27272A] bg-[#09090B] rounded"
       >
         <AccordionTrigger className="hover:no-underline py-2 px-3 h-10 bg-[#09090B] rounded-t data-[state=open]:rounded-none [&>svg]:hidden group">
           <div className="flex items-center gap-2 flex-1">
@@ -76,11 +77,19 @@ function SortableModuleAccordionItem({ module, onRemove }: ResumeModuleAccordion
           </div>
         </AccordionTrigger>
         <AccordionContent className="px-3 pb-4 pt-0 bg-[#09090B] border-t border-[#27272A] rounded-b">
-          <DynamicForm
-            moduleConfig={moduleConfig}
-            initialData={module.data}
-            onChange={handleFormChange}
-          />
+          {moduleConfig.allowMultiple && module.moduleId === 'education' ? (
+            <EducationForm
+              moduleConfig={moduleConfig}
+              initialData={module.data}
+              onChange={handleFormChange}
+            />
+          ) : (
+            <DynamicForm
+              moduleConfig={moduleConfig}
+              initialData={module.data}
+              onChange={handleFormChange}
+            />
+          )}
         </AccordionContent>
       </AccordionItem>
     </div>
@@ -104,7 +113,7 @@ export function ResumeModuleAccordion({
       defaultValue={defaultOpenItems}
       className="w-full space-y-0"
     >
-      <div className="space-y-0">
+      <div>
         {modules.map((module) => (
           <SortableModuleAccordionItem
             key={module.instanceId}

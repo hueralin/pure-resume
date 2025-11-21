@@ -69,7 +69,9 @@ export function ModuleList() {
 
     const usedModuleIds = new Set(currentResume.modules.map(m => m.moduleId))
     return moduleConfigs.filter(config => {
-      if (config.allowMultiple) return true
+      // unique 默认为 true，如果为 false 则允许重复添加
+      const isUnique = config.unique !== false
+      if (!isUnique) return true
       return !usedModuleIds.has(config.id)
     })
   }, [currentResume, moduleConfigs])
