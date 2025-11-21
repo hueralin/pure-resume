@@ -2,38 +2,50 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ModuleList } from './module-list'
-import { DynamicForm } from '@/components/forms/dynamic-form'
 import { ResumePreview } from './resume-preview'
+import { ResumeModuleAccordion } from './resume-module-accordion'
+import { ModuleSelectDialog } from './module-select-dialog'
 import { useResumeStore, useAuthStore } from '@/lib/store'
-import { getModuleConfig } from '@/lib/modules'
-import { Card } from '@/components/ui/card'
+import { loadModuleConfigs } from '@/lib/modules'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Save } from 'lucide-react'
+import { Save, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageSkeleton } from '@/components/ui/page-skeleton'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const resumeId = propResumeId || searchParams.get('id')
-  const { currentResume, currentResumeId, currentResumeTitle, updateModuleData, setCurrentResume, clearResume } = useResumeStore()
+  const { currentResume, currentResumeId, currentResumeTitle, setCurrentResume, clearResume, addModule, removeModule, reorderModules } = useResumeStore()
   const { token } = useAuthStore()
   const [loading, setLoading] = useState(false)
-  const [selectedModuleIndex, setSelectedModuleIndex] = useState(0)
   const [resumeTitle, setResumeTitle] = useState('我的简历')
   const [isDirty, setIsDirty] = useState(false)
-  const selectedModule = currentResume?.modules[selectedModuleIndex]
+  const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
 
-  const moduleConfig = useMemo(() => {
-    if (!selectedModule) return null
-    return getModuleConfig(selectedModule.moduleId)
-  }, [selectedModule])
+  const moduleConfigs = useMemo(() => loadModuleConfigs(), [])
+  
+  const availableModules = useMemo(() => {
+    if (!currentResume) return moduleConfigs
+
+    const usedModuleIds = new Set(currentResume.modules.map(m => m.moduleId))
+    return moduleConfigs.filter(config => {
+      if (config.allowMultiple) return true
+      return !usedModuleIds.has(config.id)
+    })
+  }, [currentResume, moduleConfigs])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // 加载前先清理（如果是进入新ID或创建新简历）
   useEffect(() => {
@@ -124,13 +136,31 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
     }
   }, [currentResumeTitle])
 
-  const handleFormChange = (instanceId: string) => (data: Record<string, any>) => {
-    updateModuleData(instanceId, data)
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResumeTitle(e.target.value)
     setIsDirty(true)
   }
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setResumeTitle(e.target.value)
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event
+
+    if (active.id !== over.id && currentResume) {
+      const oldIndex = currentResume.modules.findIndex(m => m.instanceId === active.id)
+      const newIndex = currentResume.modules.findIndex(m => m.instanceId === over.id)
+      const newModules = arrayMove(currentResume.modules, oldIndex, newIndex)
+      reorderModules(newModules.map(m => m.instanceId))
+      setIsDirty(true)
+    }
+  }
+
+  const handleAddModule = (moduleId: string) => {
+    const instanceId = `${moduleId}-${Date.now()}`
+    addModule(moduleId, instanceId, {})
+    setIsDirty(true)
+  }
+
+  const handleRemoveModule = (instanceId: string) => {
+    removeModule(instanceId)
     setIsDirty(true)
   }
 
@@ -177,104 +207,89 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   }
 
   if (loading) {
-    return (
-      <div className="flex h-screen bg-background">
-        {/* 左侧编辑区 Skeleton */}
-        <div className="w-1/3 p-4 space-y-4 border-r border-border">
-          <div className="flex items-center justify-between mb-6">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-10 w-20" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-4 mt-8">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </div>
-        
-        {/* 右侧预览区 Skeleton */}
-        <div className="flex-1 p-6 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
-            <Skeleton className="h-[800px] w-full rounded-lg" />
-          </div>
-        </div>
-      </div>
-    )
+    return <PageSkeleton />
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* 左侧编辑区 */}
-      <div className="w-1/3 overflow-y-auto p-4 space-y-4 bg-card border-r border-border">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold tracking-tight text-foreground">
-            编辑简历
-          </h1>
-          <Button 
-            onClick={handleSave} 
-            disabled={!currentResume}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            保存
-          </Button>
-        </div>
+    <div className="h-screen bg-black overflow-auto">
+      {/* Header - 标题和保存按钮 */}
+      <div className="w-[1200px] mx-auto my-6 flex justify-between items-center">
+        <h1 className="text-[36px] font-normal text-white">
+          编辑简历
+        </h1>
+        <Button 
+          variant="outline"
+          size="icon"
+          onClick={handleSave} 
+          disabled={!currentResume}
+          className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
+        >
+          <Save className="h-4 w-4" />
+        </Button>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="resume-title" className="text-sm font-medium text-foreground">简历名称</Label>
-          <Input
-            id="resume-title"
-            value={resumeTitle}
-            onChange={handleTitleChange}
-            placeholder="请输入简历名称"
-            className="w-full h-10 bg-background border-input"
+      {/* 整体容器，左侧留出 40px 边距，上边距 100px */}
+      <div className="flex w-[1200px] mx-auto">
+        {/* 左侧编辑区 */}
+        <div className="w-[450px] min-h-screen overflow-y-auto px-4 pt-4 pb-0 space-y-0 bg-[#27272A] rounded">
+          {/* 简历名称 */}
+          <div className="mb-6">
+            <Label htmlFor="resume-title" className="text-sm font-medium text-white mb-2 block">简历名称</Label>
+            <Input
+              id="resume-title"
+              value={resumeTitle}
+              onChange={handleTitleChange}
+              placeholder="Email"
+              className="w-full h-10 bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded"
+            />
+          </div>
+
+          {/* 简历模块 */}
+          <div>
+            <h2 className="text-sm font-medium text-white mb-2">简历模块</h2>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModuleDialogOpen(true)}
+              className="w-full h-10 bg-[#09090B] border border-[#27272A] hover:bg-[#09090B]/80 rounded flex items-center justify-center mb-4"
+            >
+              <Plus className="h-4 w-4 text-white" />
+            </Button>
+
+            {currentResume && currentResume.modules.length > 0 ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={currentResume.modules.map(m => m.instanceId)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ResumeModuleAccordion
+                    modules={currentResume.modules}
+                    onRemove={handleRemoveModule}
+                  />
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="text-center py-8 text-sm text-[#A1A1AA]">
+                暂无模块，点击&ldquo;添加模块&rdquo;开始编辑
+              </div>
+            )}
+          </div>
+
+          <ModuleSelectDialog
+            open={isModuleDialogOpen}
+            onOpenChange={setIsModuleDialogOpen}
+            modules={availableModules}
+            onSelect={handleAddModule}
           />
         </div>
 
-        <ModuleList />
-
-        {currentResume && currentResume.modules.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">选择模块编辑：</Label>
-            <Select
-              value={selectedModuleIndex.toString()}
-              onValueChange={(value) => setSelectedModuleIndex(Number(value))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="选择要编辑的模块" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentResume.modules.map((module, index) => {
-                  const config = getModuleConfig(module.moduleId)
-                  return (
-                    <SelectItem key={module.instanceId} value={index.toString()}>
-                      {config?.name || module.moduleId}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {selectedModule && moduleConfig && (
-          <Card className="p-4 bg-card border-border">
-            <DynamicForm
-              moduleConfig={moduleConfig}
-              initialData={selectedModule.data}
-              onChange={handleFormChange(selectedModule.instanceId)}
-            />
-          </Card>
-        )}
-      </div>
-
-      {/* 右侧预览区 */}
-      <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
+        {/* 右侧预览区 */}
+        <div className="overflow-y-auto bg-black rounded" style={{ width: '750px', marginLeft: '30px' }}>
           <ResumePreview />
         </div>
       </div>

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageSkeleton } from '@/components/ui/page-skeleton'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -193,18 +193,7 @@ export default function ResumeListPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
-          <Skeleton className="h-9 w-32 mb-[24px]" />
-          <div className="grid grid-cols-4 gap-[13px] min-w-[1000px]">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-80 w-60 rounded" />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
+    return <PageSkeleton />
   }
 
   return (
@@ -218,7 +207,8 @@ export default function ResumeListPage() {
           <div className="flex gap-3">
             <ThemeToggle />
             <Button 
-              variant="outline" 
+              variant="outline"
+              size="icon"
               onClick={handleLogout}
               className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
               title="退出登录"

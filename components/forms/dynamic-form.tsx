@@ -69,8 +69,7 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
 
   return (
     <Form {...form}>
-      <div className="space-y-2.5">
-        <h3 className="text-sm font-semibold">{moduleConfig.name}</h3>
+      <div className="space-y-6 pt-2">
         {moduleConfig.fields.map((field) => (
           <FormField
             key={field.id}
@@ -78,7 +77,7 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
             name={field.id}
             render={({ field: formField }) => (
               <FormItem className="space-y-1.5">
-                <FormLabel className="text-xs">
+                <FormLabel className="text-xs font-medium text-white mb-3 block">
                   {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
                 </FormLabel>
@@ -86,13 +85,15 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
                   {field.type === 'textarea' ? (
                     <Textarea 
                       placeholder={field.placeholder} 
-                      {...formField} 
+                      {...formField}
+                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded min-h-[40px] h-auto px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A] resize-none"
                     />
                   ) : (
                     <Input
                       type={field.type}
                       placeholder={field.placeholder}
                       {...formField}
+                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A]"
                     />
                   )}
                 </FormControl>
