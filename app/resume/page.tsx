@@ -3,23 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { LogOut } from 'lucide-react'
-import { toast } from 'sonner'
+import { Button, Input, App, Modal } from 'antd'
+import { LogoutOutlined } from '@ant-design/icons'
+import { useToast } from '@/lib/toast'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { PageSkeleton } from '@/components/ui/page-skeleton'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { ResumeCard } from '@/components/resume/resume-card'
 import { AddResumeCard } from '@/components/resume/add-resume-card'
 
@@ -30,6 +17,8 @@ interface Resume {
 }
 
 export default function ResumeListPage() {
+  const { modal } = App.useApp()
+  const toast = useToast()
   const router = useRouter()
   const { token, clearAuth } = useAuthStore()
   const [resumes, setResumes] = useState<Resume[]>([])
@@ -80,9 +69,7 @@ export default function ResumeListPage() {
     setIsCreateOpen(true)
   }
 
-  const handleCreateConfirm = async (e: React.MouseEvent) => {
-    e.preventDefault() // 阻止默认关闭行为
-    
+  const handleCreateConfirm = async () => {
     if (!newResumeTitle.trim()) {
       toast.error('请输入简历名称')
       return
@@ -165,39 +152,55 @@ export default function ResumeListPage() {
   }
 
   const handleDelete = async (resumeId: string) => {
-    try {
-      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
-      if (!authToken) {
-        toast.error('请先登录')
-        return
-      }
+    modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这份简历吗？删除后无法恢复。',
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+          if (!authToken) {
+            toast.error('请先登录')
+            return
+          }
 
-      const response = await fetch(`/api/resumes/${resumeId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-      })
+          const response = await fetch(`/api/resumes/${resumeId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+            },
+          })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || '删除失败')
-      }
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || '删除失败')
+          }
 
-      // 从列表中移除已删除的简历
-      setResumes(resumes.filter(r => r.id !== resumeId))
-      toast.success('删除成功')
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '删除简历失败，请稍后重试')
-    }
+          // 从列表中移除已删除的简历
+          setResumes(resumes.filter(r => r.id !== resumeId))
+          toast.success('删除成功')
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : '删除简历失败，请稍后重试')
+        }
+      },
+    })
   }
 
   if (loading) {
-    return <PageSkeleton />
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+          <p className="mt-4 text-muted-foreground">加载中...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-[140px] py-[24px] min-w-[1000px]">
         {/* 标题区域 */}
         <div className="flex items-center justify-between mb-[24px]">
@@ -207,14 +210,11 @@ export default function ResumeListPage() {
           <div className="flex gap-3">
             <ThemeToggle />
             <Button 
-              variant="outline"
-              size="icon"
+              type="default"
+              icon={<LogoutOutlined />}
               onClick={handleLogout}
-              className="border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
               title="退出登录"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+            />
           </div>
         </div>
 
@@ -236,39 +236,32 @@ export default function ResumeListPage() {
         </div>
         
         {/* 新建简历弹窗 */}
-        <AlertDialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>创建新简历</AlertDialogTitle>
-              <AlertDialogDescription>
-                给您的简历起个名字，例如&ldquo;前端开发工程师&rdquo;或&ldquo;产品经理&rdquo;
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4">
-              <div className="grid w-full gap-1.5">
-                <Label htmlFor="resume-name">简历名称</Label>
-                <Input 
-                  id="resume-name" 
-                  placeholder="请输入简历名称" 
-                  value={newResumeTitle}
-                  onChange={(e) => setNewResumeTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !isCreating) {
-                      handleCreateConfirm(e as unknown as React.MouseEvent)
-                    }
-                  }}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isCreating}>取消</AlertDialogCancel>
-              <AlertDialogAction onClick={handleCreateConfirm} disabled={isCreating} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                {isCreating ? '创建中...' : '确定'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Modal
+          open={isCreateOpen}
+          onCancel={() => setIsCreateOpen(false)}
+          title="创建新简历"
+          onOk={handleCreateConfirm}
+          confirmLoading={isCreating}
+          okText="确定"
+          cancelText="取消"
+        >
+          <div className="mb-4 text-gray-500">
+            给您的简历起个名字，例如 &ldquo;前端开发工程师&rdquo; 或 &ldquo;产品经理&rdquo;
+          </div>
+          <Input 
+            placeholder="请输入简历名称" 
+            value={newResumeTitle}
+            onChange={(e) => setNewResumeTitle(e.target.value)}
+            onPressEnter={() => {
+              if (!isCreating) {
+                handleCreateConfirm()
+              }
+            }}
+            allowClear
+            autoFocus
+            size="large"
+          />
+        </Modal>
 
       </div>
     </div>

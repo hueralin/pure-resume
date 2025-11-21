@@ -1,15 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { ArrowRight, CheckCircle2, Layout, FileText, Download } from 'lucide-react'
+import { Button } from 'antd'
+import { ArrowRightOutlined } from '@ant-design/icons'
+import { Layout, FileText, Download } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/lib/toast'
 
 export function LandingPage() {
+  const toast = useToast()
   const { token } = useAuthStore()
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
@@ -45,10 +46,10 @@ export function LandingPage() {
     return (
       <>
         <Link href="/login">
-          <Button variant="ghost">登录</Button>
+          <Button type="text">登录</Button>
         </Link>
         <Link href="/register">
-          <Button>注册</Button>
+          <Button type="primary">注册</Button>
         </Link>
       </>
     )
@@ -62,16 +63,16 @@ export function LandingPage() {
     if (token) {
       return (
         <Link href="/resume">
-          <Button size="lg" className="gap-2">
-            控制面板 <ArrowRight className="h-4 w-4" />
+          <Button size="large" icon={<ArrowRightOutlined />}>
+            控制面板
           </Button>
         </Link>
       )
     }
 
     return (
-      <Button size="lg" className="gap-2" onClick={handleStartClick}>
-        开始制作 <ArrowRight className="h-4 w-4" />
+      <Button size="large" icon={<ArrowRightOutlined />} onClick={handleStartClick}>
+        开始制作
       </Button>
     )
   }

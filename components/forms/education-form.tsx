@@ -6,11 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import {
-  Form,
-} from '@/components/ui/form'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Button, App } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
 import { ModuleConfig } from '@/lib/modules'
 import { EducationItemAccordion } from './education-item-accordion'
 
@@ -31,6 +28,7 @@ interface EducationFormProps {
 }
 
 export function EducationForm({ moduleConfig, initialData, onChange }: EducationFormProps) {
+  const { modal } = App.useApp()
   const getInitialItems = (): EducationItem[] => {
     if (initialData && 'items' in initialData && Array.isArray(initialData.items) && initialData.items.length > 0) {
       // 确保每个 item 都有 _id
@@ -52,6 +50,8 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
 
   const [items, setItems] = useState<EducationItem[]>(getInitialItems)
   const isDraggingRef = useRef(false)
+  const isAddingRef = useRef(false)
+  const isRemovingRef = useRef(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -87,12 +87,19 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
   const formData = watch()
 
   // 当 items 变化时更新表单
-  // 注意：拖拽时跳过 reset，因为已经通过 setValue 更新了
+  // 注意：拖拽、添加和删除时跳过 reset，因为已经通过 setValue 更新了
   useEffect(() => {
-    if (!isDraggingRef.current) {
+    if (!isDraggingRef.current && !isAddingRef.current && !isRemovingRef.current) {
       // 移除 _id 字段后再重置表单（_id 是内部使用的，不应该保存到表单数据中）
       const itemsWithoutId = items.map(({ _id, ...item }) => item)
       form.reset({ items: itemsWithoutId }, { keepValues: false })
+    }
+    // 重置标志
+    if (isAddingRef.current) {
+      isAddingRef.current = false
+    }
+    if (isRemovingRef.current) {
+      isRemovingRef.current = false
     }
   }, [items, form])
 
@@ -107,9 +114,12 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [formData, onChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData])
 
   const handleAddItem = () => {
+    // 获取当前表单值，确保保留已有数据
+    const currentFormItems = form.getValues('items') || []
     const newItem: EducationItem = {
       school: '',
       major: '',
@@ -119,16 +129,43 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
       description: '',
       _id: `item-${Date.now()}-${items.length}`,
     }
+    // 设置添加标志，防止 useEffect 中的 reset 清空数据
+    isAddingRef.current = true
+    // 先更新表单值，保留已有数据
+    form.setValue('items', [...currentFormItems, {
+      school: '',
+      major: '',
+      degree: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+    }])
+    // 然后更新 items 状态
     const newItems = [...items, newItem]
     setItems(newItems)
-    form.setValue('items', newItems)
   }
 
   const handleRemoveItem = (index: number) => {
-    if (items.length <= 1) return // 至少保留一项
-    const newItems = items.filter((_, i) => i !== index)
-    setItems(newItems)
-    form.setValue('items', newItems)
+    modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这条教育经历吗？删除后无法恢复。',
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        // 获取当前表单值
+        const currentFormItems = form.getValues('items') || []
+        // 移除对应索引的表单数据
+        const newFormItems = currentFormItems.filter((_, i) => i !== index)
+        const newItems = items.filter((_, i) => i !== index)
+        // 设置删除标志，防止 useEffect 中的 reset 清空数据
+        isRemovingRef.current = true
+        // 先更新表单值，保留剩余数据
+        form.setValue('items', newFormItems)
+        // 然后更新 items 状态
+        setItems(newItems)
+      },
+    })
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -157,7 +194,7 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
   const itemIds = useMemo(() => items.map(item => item._id || `item-${items.indexOf(item)}`), [items])
 
   return (
-    <Form {...form}>
+    <div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -167,14 +204,14 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
           items={itemIds}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-3 pt-2">
+          <div className="space-y-2">
             {items.map((item, index) => (
               <EducationItemAccordion
                 key={item._id || `item-${index}`}
                 id={item._id || `item-${index}`}
                 index={index}
                 control={form.control}
-                canRemove={items.length > 1}
+                canRemove={true}
                 onRemove={() => handleRemoveItem(index)}
               />
             ))}
@@ -183,15 +220,16 @@ export function EducationForm({ moduleConfig, initialData, onChange }: Education
       </DndContext>
 
       <Button
-        variant="outline"
-        size="sm"
+        type="default"
+        icon={<PlusOutlined />}
         onClick={handleAddItem}
-        className="w-full h-10 bg-[#09090B] border border-[#27272A] hover:bg-[#09090B]/80 rounded flex items-center justify-center gap-2 mt-3"
+        block
+        className="mt-2"
+        style={{ background: '#09090B', borderColor: '#27272A', color: 'white' }}
       >
-        <Plus className="h-4 w-4 text-white" />
-        <span className="text-white">添加一项</span>
+        添加一项
       </Button>
-    </Form>
+    </div>
   )
 }
 

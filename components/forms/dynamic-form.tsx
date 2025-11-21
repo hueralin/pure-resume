@@ -1,26 +1,10 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { DatePicker } from '@/components/ui/date-picker'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Input, Select, DatePicker, Form } from 'antd'
+import dayjs from 'dayjs'
 import { ModuleConfig, ModuleField } from '@/lib/modules'
 import { useEffect } from 'react'
 
@@ -60,6 +44,15 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
     }, {} as Record<string, any>),
   })
 
+  // 当 initialData 变化时，更新表单值
+  useEffect(() => {
+    const newValues = moduleConfig.fields.reduce((acc, field) => {
+      acc[field.id] = initialData?.[field.id] ?? ''
+      return acc
+    }, {} as Record<string, any>)
+    form.reset(newValues)
+  }, [initialData, moduleConfig.fields, form])
+
   const { watch } = form
   const formData = watch()
 
@@ -70,72 +63,70 @@ export function DynamicForm({ moduleConfig, initialData, onChange }: DynamicForm
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [formData, onChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData])
 
   return (
-    <Form {...form}>
-      <div className="space-y-6 pt-2">
-        {moduleConfig.fields.map((field) => (
-          <FormField
-            key={field.id}
-            control={form.control}
-            name={field.id}
-            render={({ field: formField }) => (
-              <FormItem className="space-y-1.5">
-                <FormLabel className="text-xs font-medium text-white mb-3 block">
-                  {field.label}
-                </FormLabel>
-                <FormControl>
-                  {field.type === 'textarea' ? (
-                    <Textarea 
-                      placeholder={field.placeholder} 
-                      {...formField}
-                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded min-h-[40px] h-auto px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A] resize-none"
-                    />
-                  ) : field.type === 'select' ? (
-                    <Select
-                      value={formField.value || ''}
-                      onValueChange={formField.onChange}
-                    >
-                      <SelectTrigger className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus:ring-1 focus:ring-[#27272A] focus:border-[#27272A]">
-                        <SelectValue placeholder={field.placeholder || '请选择'} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#09090B] border border-[#27272A] text-white">
-                        {field.options?.map((option) => (
-                          <SelectItem 
-                            key={option} 
-                            value={option}
-                            className="focus:bg-[#27272A] focus:text-white"
-                          >
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : field.type === 'date' ? (
-                    <DatePicker
-                      value={formField.value ? new Date(formField.value) : undefined}
-                      onChange={(date) => {
-                        formField.onChange(date ? date.toISOString().split('T')[0] : '')
-                      }}
-                      placeholder={field.placeholder || '选择日期'}
-                      className="bg-[#09090B] border border-[#27272A] text-white w-full h-10 px-3 text-sm"
-                    />
-                  ) : (
-                    <Input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      {...formField}
-                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A]"
-                    />
-                  )}
-                </FormControl>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+    <Form layout="vertical" className="pt-2">
+      {moduleConfig.fields.map((field) => (
+        <Controller
+          key={field.id}
+          control={form.control}
+          name={field.id}
+          render={({ field: formField, fieldState }) => (
+            <Form.Item
+              label={<span className="text-xs font-medium text-white">{field.label}</span>}
+              validateStatus={fieldState.error ? 'error' : ''}
+              help={fieldState.error?.message}
+            >
+              {field.type === 'textarea' ? (
+                <Input.TextArea 
+                  placeholder={field.placeholder} 
+                  {...formField}
+                  rows={3}
+                  allowClear
+                  className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
+                  style={{ resize: 'none' }}
+                />
+              ) : field.type === 'select' ? (
+                <Select
+                  value={formField.value || undefined}
+                  onChange={formField.onChange}
+                  placeholder={field.placeholder || '请选择'}
+                  allowClear
+                  className="w-full"
+                  popupClassName="bg-[#09090B]"
+                >
+                  {field.options?.map((option) => (
+                    <Select.Option key={option} value={option}>
+                      {option}
+                    </Select.Option>
+                  ))}
+                </Select>
+              ) : field.type === 'date' ? (
+                <DatePicker
+                  value={formField.value ? dayjs(formField.value) : undefined}
+                  onChange={(date) => {
+                    formField.onChange(date ? date.format('YYYY-MM-DD') : '')
+                  }}
+                  placeholder={field.placeholder || '选择日期'}
+                  allowClear
+                  className="w-full"
+                  format="YYYY-MM-DD"
+                />
+              ) : (
+                <Input
+                  type={field.type}
+                  placeholder={field.placeholder}
+                  {...formField}
+                  allowClear
+                  className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
+                />
+              )}
+            </Form.Item>
+          )}
+        />
+      ))}
     </Form>
   )
 }

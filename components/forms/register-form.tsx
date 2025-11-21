@@ -2,29 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button, Input, Card, Form } from 'antd'
 import { useAuthStore } from '@/lib/store'
-
-const registerSchema = z.object({
-  email: z.string().email('邮箱格式不正确'),
-  password: z.string().min(6, '密码至少6位'),
-  name: z.string().optional(),
-})
-
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = {
+  email: string
+  password: string
+  name?: string
+}
 
 export function RegisterForm() {
   const router = useRouter()
@@ -32,16 +16,9 @@ export function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const setAuth = useAuthStore((state) => state.setAuth)
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      name: '',
-    },
-  })
+  const [form] = Form.useForm<RegisterFormData>()
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (values: RegisterFormData) => {
     setError('')
     setLoading(true)
 
@@ -49,7 +26,7 @@ export function RegisterForm() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(values),
       })
 
       const result = await response.json()
@@ -72,93 +49,79 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-[400px] bg-card border-border shadow-sm">
-      <CardHeader className="space-y-1 p-6 pb-4">
-        <CardTitle className="text-xl font-semibold text-foreground">
-          注册账号
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 pt-0">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>邮箱</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="your@email.com"
-                      type="email"
-                      className="w-full h-10 bg-background border-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Card 
+      title="注册账号" 
+      className="w-full max-w-[400px]"
+      styles={{
+        body: { padding: '24px' }
+      }}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onSubmit}
+        className="space-y-4"
+      >
+        <Form.Item
+          label="邮箱"
+          name="email"
+          rules={[{ required: true, message: '请输入邮箱' }, { type: 'email', message: '邮箱格式不正确' }]}
+          validateStatus={error ? 'error' : ''}
+        >
+          <Input
+            placeholder="your@email.com"
+            type="email"
+            size="large"
+            allowClear
+          />
+        </Form.Item>
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>密码</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="至少6位"
-                      className="w-full h-10 bg-background border-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <Form.Item
+          label="密码"
+          name="password"
+          rules={[{ required: true, message: '请输入密码' }, { min: 6, message: '密码至少6位' }]}
+          validateStatus={error ? 'error' : ''}
+        >
+          <Input.Password
+            placeholder="至少6位"
+            size="large"
+          />
+        </Form.Item>
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>姓名（可选）</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="您的姓名"
-                      type="text"
-                      className="w-full h-10 bg-background border-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <Form.Item
+          label="姓名（可选）"
+          name="name"
+        >
+          <Input
+            placeholder="您的姓名"
+            type="text"
+            size="large"
+            allowClear
+          />
+        </Form.Item>
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+        {error && (
+          <div className="text-sm text-red-500">{error}</div>
+        )}
 
-            <Button 
-              type="submit" 
-              className="w-full h-10 bg-primary text-primary-foreground hover:bg-primary/90" 
-              disabled={loading}
-            >
-              {loading ? '注册中...' : '注册'}
-            </Button>
+        <Form.Item>
+          <Button 
+            type="primary"
+            htmlType="submit"
+            block
+            loading={loading}
+          >
+            {loading ? '注册中...' : '注册'}
+          </Button>
+        </Form.Item>
 
-            <p className="text-center text-sm text-muted-foreground">
-              已有账号？{' '}
-              <a href="/login" className="text-primary hover:underline font-medium">
-                立即登录
-              </a>
-            </p>
-          </form>
-        </Form>
-      </CardContent>
+        <div className="text-center text-sm text-gray-500">
+          已有账号？{' '}
+          <a href="/login" className="text-blue-500 hover:underline font-medium">
+            立即登录
+          </a>
+        </div>
+      </Form>
     </Card>
   )
 }

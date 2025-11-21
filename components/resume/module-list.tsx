@@ -7,9 +7,9 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { loadModuleConfigs } from '@/lib/modules'
 import { useResumeStore } from '@/lib/store'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { GripVertical, X } from 'lucide-react'
+import { Card, Button } from 'antd'
+import { GripVertical } from 'lucide-react'
+import { CloseOutlined } from '@ant-design/icons'
 
 function SortableModuleItem({ instanceId, moduleId, onRemove }: { instanceId: string; moduleId: string; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: instanceId })
@@ -41,13 +41,11 @@ function SortableModuleItem({ instanceId, moduleId, onRemove }: { instanceId: st
           </span>
         </div>
         <Button
-          variant="ghost"
-          size="icon"
+          type="text"
+          size="small"
+          icon={<CloseOutlined />}
           onClick={onRemove}
-          className="h-6 w-6 hover:bg-accent text-muted-foreground hover:text-accent-foreground"
-        >
-          <X className="h-3 w-3" />
-        </Button>
+        />
       </div>
     </Card>
   )
@@ -105,9 +103,9 @@ export function ModuleList() {
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm text-foreground">{config.name}</span>
                 <Button
-                  variant="outline"
+                  type="default"
+                  size="small"
                   onClick={() => handleAddModule(config.id)}
-                  className="border-border text-primary hover:bg-accent hover:text-accent-foreground text-xs px-2 h-[22px]"
                 >
                   添加
                 </Button>
@@ -157,9 +155,9 @@ export function ModuleList() {
               <div className="flex items-center justify-between">
                 <span className="font-medium text-sm text-foreground">{config.name}</span>
                 <Button
-                  variant="outline"
+                  type="default"
+                  size="small"
                   onClick={() => handleAddModule(config.id)}
-                  className="border-border text-primary hover:bg-accent hover:text-accent-foreground text-xs px-2 h-[22px]"
                 >
                   添加
                 </Button>

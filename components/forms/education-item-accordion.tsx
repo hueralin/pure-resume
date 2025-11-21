@@ -2,31 +2,11 @@
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
-import { X, GripVertical } from 'lucide-react'
-import { Control, useWatch, FieldValues } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { DatePicker } from '@/components/ui/date-picker'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import { Collapse, Input, Select, DatePicker, Form } from 'antd'
+import { CloseOutlined } from '@ant-design/icons'
+import { GripVertical } from 'lucide-react'
+import { Control, useWatch, FieldValues, Controller } from 'react-hook-form'
+import dayjs from 'dayjs'
 
 interface EducationItemAccordionProps {
   id: string
@@ -75,12 +55,10 @@ export function EducationItemAccordion({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem
-          value={`item-${index}`}
-          className="border border-[#27272A] rounded bg-[#09090B]"
-        >
-          <AccordionTrigger className="hover:no-underline py-2 px-3 h-auto bg-[#09090B] rounded-t data-[state=open]:rounded-none group">
+      <Collapse
+        items={[{
+          key: `item-${index}`,
+          label: (
             <div className="flex items-center gap-2 flex-1">
               <div
                 {...attributes}
@@ -93,171 +71,162 @@ export function EducationItemAccordion({
               >
                 <GripVertical className="h-4 w-4" />
               </div>
-              <span className="text-xs font-medium text-[#A1A1AA] group-hover:text-white transition-colors flex-1 text-left">
+              <span className="text-xs font-medium text-[#A1A1AA] flex-1 text-left">
                 {getTitle()}
               </span>
-              {canRemove && (
-                <div
-                  className="h-4 w-4 hover:opacity-70 cursor-pointer flex items-center justify-center"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onRemove()
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <X className="h-4 w-4 text-[#A1A1AA]" />
-                </div>
-              )}
             </div>
-          </AccordionTrigger>
-        <AccordionContent className="px-3 pb-4 pt-0 bg-[#09090B] border-t border-[#27272A] rounded-b">
-          <div className="space-y-4 pt-4">
-            <FormField
-              control={control}
-              name={`items.${index}.school`}
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs font-medium text-white mb-3 block">
-                    学校名称
-                  </FormLabel>
-                  <FormControl>
+          ),
+          extra: canRemove ? (
+            <div
+              className="h-3 w-3 hover:opacity-70 cursor-pointer flex items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemove()
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <CloseOutlined className="h-3 w-3 text-[#A1A1AA]" />
+            </div>
+          ) : null,
+          children: (
+            <Form layout="vertical" className="pt-4">
+              <Controller
+                control={control}
+                name={`items.${index}.school`}
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">学校名称</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
                     <Input
                       placeholder="请输入学校名称"
                       {...field}
-                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A]"
+                      allowClear
+                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
                     />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+                  </Form.Item>
+                )}
+              />
 
-            <FormField
-              control={control}
-              name={`items.${index}.major`}
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs font-medium text-white mb-3 block">
-                    专业
-                  </FormLabel>
-                  <FormControl>
+              <Controller
+                control={control}
+                name={`items.${index}.major`}
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">专业</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
                     <Input
                       placeholder="请输入专业名称"
                       {...field}
-                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A]"
+                      allowClear
+                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
                     />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+                  </Form.Item>
+                )}
+              />
 
-            <FormField
-              control={control}
-              name={`items.${index}.degree`}
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs font-medium text-white mb-3 block">
-                    学历
-                  </FormLabel>
-                  <FormControl>
+              <Controller
+                control={control}
+                name={`items.${index}.degree`}
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">学历</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
                     <Select
-                      value={field.value || ''}
-                      onValueChange={field.onChange}
+                      value={field.value || undefined}
+                      onChange={field.onChange}
+                      placeholder="请选择学历"
+                      allowClear
+                      className="w-full"
                     >
-                      <SelectTrigger className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded h-10 px-3 text-sm focus:ring-1 focus:ring-[#27272A] focus:border-[#27272A]">
-                        <SelectValue placeholder="请选择学历" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#09090B] border border-[#27272A] text-white">
-                        {['专科', '本科', '硕士', '博士', '其他'].map((option) => (
-                          <SelectItem
-                            key={option}
-                            value={option}
-                            className="focus:bg-[#27272A] focus:text-white"
-                          >
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                      {['专科', '本科', '硕士', '博士', '其他'].map((option) => (
+                        <Select.Option key={option} value={option}>
+                          {option}
+                        </Select.Option>
+                      ))}
                     </Select>
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
+                  </Form.Item>
+                )}
+              />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
+              <Controller
                 control={control}
                 name={`items.${index}.startDate`}
-                render={({ field }) => (
-                  <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs font-medium text-white mb-3 block">
-                    开始时间
-                  </FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : undefined}
-                        onChange={(date) => {
-                          field.onChange(date ? date.toISOString().split('T')[0] : '')
-                        }}
-                        placeholder="选择开始时间"
-                        className="bg-[#09090B] border border-[#27272A] text-white w-full h-10 px-3 text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">开始时间</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
+                    <DatePicker
+                      value={field.value ? dayjs(field.value) : undefined}
+                      onChange={(date) => {
+                        field.onChange(date ? date.format('YYYY-MM-DD') : '')
+                      }}
+                      placeholder="选择开始时间"
+                      allowClear
+                      className="w-full"
+                      format="YYYY-MM-DD"
+                    />
+                  </Form.Item>
                 )}
               />
 
-              <FormField
+              <Controller
                 control={control}
                 name={`items.${index}.endDate`}
-                render={({ field }) => (
-                  <FormItem className="space-y-1.5">
-                    <FormLabel className="text-xs font-medium text-white mb-3 block">
-                      结束时间
-                    </FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        value={field.value ? new Date(field.value) : undefined}
-                        onChange={(date) => {
-                          field.onChange(date ? date.toISOString().split('T')[0] : '')
-                        }}
-                        placeholder="选择结束时间（如在校可留空）"
-                        className="bg-[#09090B] border border-[#27272A] text-white w-full h-10 px-3 text-sm"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">结束时间</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
+                    <DatePicker
+                      value={field.value ? dayjs(field.value) : undefined}
+                      onChange={(date) => {
+                        field.onChange(date ? date.format('YYYY-MM-DD') : '')
+                      }}
+                      placeholder="选择结束时间（如在校可留空）"
+                      allowClear
+                      className="w-full"
+                      format="YYYY-MM-DD"
+                    />
+                  </Form.Item>
                 )}
               />
-            </div>
 
-            <FormField
-              control={control}
-              name={`items.${index}.description`}
-              render={({ field }) => (
-                <FormItem className="space-y-1.5">
-                  <FormLabel className="text-xs font-medium text-white mb-3 block">
-                    描述
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
+              <Controller
+                control={control}
+                name={`items.${index}.description`}
+                render={({ field, fieldState }) => (
+                  <Form.Item
+                    label={<span className="text-xs font-medium text-white">描述</span>}
+                    validateStatus={fieldState.error ? 'error' : ''}
+                    help={fieldState.error?.message}
+                  >
+                    <Input.TextArea
                       placeholder="可填写主要课程、成绩、荣誉等（选填）"
                       {...field}
-                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA] rounded min-h-[40px] h-auto px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-[#27272A] focus-visible:border-[#27272A] resize-none"
+                      rows={3}
+                      allowClear
+                      className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
+                      style={{ resize: 'none' }}
                     />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+                  </Form.Item>
+                )}
+              />
+            </Form>
+          ),
+        }]}
+        className="border border-[#27272A] rounded bg-[#09090B]"
+        style={{ background: '#09090B', borderColor: '#27272A' }}
+      />
     </div>
   )
 }
