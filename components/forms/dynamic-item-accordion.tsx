@@ -165,8 +165,8 @@ export function DynamicItemAccordion({
         }]}
         className="border border-[#27272A] rounded bg-[#09090B]"
         style={{ background: '#09090B', borderColor: '#27272A' }}
+        expandIcon={() => null}
       />
     </div>
   )
 }
-

@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
 import { Button, Input, App, Modal } from 'antd'
-import { LogoutOutlined } from '@ant-design/icons'
+import { LogoutOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
 import { useToast } from '@/lib/toast'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ResumeCard } from '@/components/resume/resume-card'
 import { AddResumeCard } from '@/components/resume/add-resume-card'
+import { useFullscreen } from '@/hooks/use-fullscreen'
 
 interface Resume {
   id: string
@@ -28,6 +29,7 @@ export default function ResumeListPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [newResumeTitle, setNewResumeTitle] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   useEffect(() => {
     if (!token) {
@@ -209,6 +211,12 @@ export default function ResumeListPage() {
           </h1>
           <div className="flex gap-3">
             <ThemeToggle />
+            <Button 
+              type="default"
+              icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "退出全屏" : "全屏"}
+            />
             <Button 
               type="default"
               icon={<LogoutOutlined />}

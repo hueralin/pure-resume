@@ -90,6 +90,7 @@ function SortableModuleAccordionItem({ module, onRemove }: ResumeModuleAccordion
         }]}
         className="border border-[#27272A] bg-[#09090B] rounded"
         style={{ background: '#09090B', borderColor: '#27272A' }}
+        expandIcon={() => null}
       />
     </div>
   )

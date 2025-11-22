@@ -7,12 +7,14 @@ import { ResumeModuleAccordion } from './resume-module-accordion'
 import { ModuleSelectDialog } from './module-select-dialog'
 import { useResumeStore, useAuthStore } from '@/lib/store'
 import { loadModuleConfigs } from '@/lib/modules'
+import { useFullscreen } from '@/hooks/use-fullscreen'
 import { Button, Input, App } from 'antd'
 import { SaveOutlined, PlusOutlined, ArrowLeftOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/toast'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 
 export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) {
   const { modal } = App.useApp()
@@ -27,7 +29,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   const [isDirty, setIsDirty] = useState(false)
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
   const [titleError, setTitleError] = useState<string>('')
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   const moduleConfigs = useMemo(() => loadModuleConfigs(), [])
   
@@ -49,27 +51,6 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
-
-  // 监听全屏变化
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((e) => {
-        console.error(`Error attempting to enable fullscreen: ${e.message} (${e.name})`)
-      })
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen()
-      }
-    }
-  }
 
   // 加载前先清理（如果是进入新ID或创建新简历）
   useEffect(() => {
@@ -108,7 +89,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       // 如果已经有当前简历且ID匹配，则不重新加载（除非是为了刷新）
       // 但为了解决用户反馈的“脏数据”问题，我们应该强制加载
       if (!resumeId || resumeId === 'new') return 
-
+      
       if (currentResumeId === resumeId && !isDirty) return
 
       try {
@@ -341,6 +322,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
                   sensors={sensors}
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
+                  modifiers={[restrictToVerticalAxis]}
                 >
                   <SortableContext
                     items={currentResume.modules.map(m => m.instanceId)}
@@ -376,5 +358,3 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
     </div>
   )
 }
-
-
