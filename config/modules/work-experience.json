@@ -1,0 +1,46 @@
+{
+  "id": "work-experience",
+  "name": "工作经历",
+  "icon": "Briefcase",
+  "allowMultiple": true,
+  "unique": true,
+  "order": 3,
+  "fields": [
+    {
+      "id": "company",
+      "label": "公司名称",
+      "type": "text",
+      "required": false,
+      "placeholder": "请输入公司名称"
+    },
+    {
+      "id": "position",
+      "label": "职位",
+      "type": "text",
+      "required": false,
+      "placeholder": "请输入职位名称"
+    },
+    {
+      "id": "startDate",
+      "label": "开始时间",
+      "type": "date",
+      "required": false,
+      "placeholder": "选择入职时间"
+    },
+    {
+      "id": "endDate",
+      "label": "结束时间",
+      "type": "date",
+      "required": false,
+      "placeholder": "选择离职时间（如在职可留空，将显示为'至今'）"
+    },
+    {
+      "id": "description",
+      "label": "工作内容",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "简要描述工作职责、项目经验及成就（建议分点描述）"
+    }
+  ]
+}
+

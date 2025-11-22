@@ -1,5 +1,6 @@
 import basicInfoConfig from '@/config/modules/basic-info.json'
 import educationConfig from '@/config/modules/education.json'
+import workExperienceConfig from '@/config/modules/work-experience.json'
 
 export interface ModuleField {
   id: string
@@ -25,10 +26,10 @@ export function loadModuleConfigs(): ModuleConfig[] {
   return [
     basicInfoConfig as ModuleConfig,
     educationConfig as ModuleConfig,
+    workExperienceConfig as ModuleConfig,
   ].sort((a, b) => a.order - b.order)
 }
 
 export function getModuleConfig(moduleId: string): ModuleConfig | undefined {
   return loadModuleConfigs().find(m => m.id === moduleId)
 }
-

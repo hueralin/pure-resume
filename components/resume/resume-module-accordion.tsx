@@ -6,7 +6,7 @@ import { Collapse } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { GripVertical } from 'lucide-react'
 import { DynamicForm } from '@/components/forms/dynamic-form'
-import { EducationForm } from '@/components/forms/education-form'
+import { DynamicListForm } from '@/components/forms/dynamic-list-form'
 import { getModuleConfig } from '@/lib/modules'
 import { ResumeModuleData } from '@/types/resume'
 import { useResumeStore } from '@/lib/store'
@@ -72,8 +72,8 @@ function SortableModuleAccordionItem({ module, onRemove }: ResumeModuleAccordion
           ),
           children: (
             <div>
-              {moduleConfig.allowMultiple && module.moduleId === 'education' ? (
-                <EducationForm
+              {moduleConfig.allowMultiple ? (
+                <DynamicListForm
                   moduleConfig={moduleConfig}
                   initialData={module.data}
                   onChange={handleFormChange}
@@ -118,4 +118,3 @@ export function ResumeModuleAccordion({
     </div>
   )
 }
-
