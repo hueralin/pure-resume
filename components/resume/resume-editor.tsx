@@ -8,7 +8,7 @@ import { ModuleSelectDialog } from './module-select-dialog'
 import { useResumeStore, useAuthStore } from '@/lib/store'
 import { loadModuleConfigs } from '@/lib/modules'
 import { Button, Input, App } from 'antd'
-import { SaveOutlined, PlusOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import { SaveOutlined, PlusOutlined, ArrowLeftOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/toast'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -27,6 +27,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   const [isDirty, setIsDirty] = useState(false)
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
   const [titleError, setTitleError] = useState<string>('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const moduleConfigs = useMemo(() => loadModuleConfigs(), [])
   
@@ -48,6 +49,27 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
+
+  // 监听全屏变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((e) => {
+        console.error(`Error attempting to enable fullscreen: ${e.message} (${e.name})`)
+      })
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
 
   // 加载前先清理（如果是进入新ID或创建新简历）
   useEffect(() => {
@@ -255,6 +277,12 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
             title="返回"
             icon={<ArrowLeftOutlined />}
             onClick={() => router.back()}
+          />
+          <Button 
+            type="default"
+            title={isFullscreen ? "退出全屏" : "全屏"}
+            icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+            onClick={toggleFullscreen}
           />
           <Button 
             type="default"

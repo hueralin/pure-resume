@@ -55,10 +55,10 @@ export function ModuleSelectDialog({
               onClick={() => setSelectedModuleId(module.id)}
               className={cn(
                 'relative p-4 rounded border cursor-pointer transition-colors',
-                'hover:bg-[#27272A]/50',
+                'bg-[#27272A] hover:bg-[#09090B]',
                 isSelected
-                  ? 'border-[#27272A] bg-[#27272A]/30'
-                  : 'border-[#27272A] bg-[#09090B]'
+                  ? 'border-[#27272A] bg-[#09090B]'
+                  : 'border-[#27272A]'
               )}
             >
               <div className="flex items-start justify-between gap-4">

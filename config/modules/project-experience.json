@@ -1,0 +1,52 @@
+{
+  "id": "project-experience",
+  "name": "项目经历",
+  "icon": "FolderGit2",
+  "allowMultiple": true,
+  "unique": true,
+  "order": 4,
+  "fields": [
+    {
+      "id": "projectName",
+      "label": "项目名称",
+      "type": "text",
+      "required": false,
+      "placeholder": "请输入项目名称"
+    },
+    {
+      "id": "role",
+      "label": "项目角色",
+      "type": "text",
+      "required": false,
+      "placeholder": "请输入担任的角色"
+    },
+    {
+      "id": "startDate",
+      "label": "开始时间",
+      "type": "date",
+      "required": false,
+      "placeholder": "选择开始时间"
+    },
+    {
+      "id": "endDate",
+      "label": "结束时间",
+      "type": "date",
+      "required": false,
+      "placeholder": "选择结束时间（如进行中可留空）"
+    },
+    {
+      "id": "link",
+      "label": "项目链接",
+      "type": "text",
+      "required": false,
+      "placeholder": "请输入项目链接（选填）"
+    },
+    {
+      "id": "description",
+      "label": "项目描述",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "简要描述项目背景、技术栈、个人职责及成果（建议分点描述）"
+    }
+  ]
+}
