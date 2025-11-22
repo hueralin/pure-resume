@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "简历制作工具",
+  title: "Pure Resume - 简历制作工具",
   description: "专业的在线简历制作工具，支持拖拽式编辑、实时预览和PDF导出",
 };
 

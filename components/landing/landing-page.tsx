@@ -84,7 +84,7 @@ export function LandingPage() {
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-2 font-bold text-xl">
             <FileText className="h-6 w-6 text-primary" />
-            <span>Resume Builder</span>
+            <span>Pure Resume</span>
           </div>
           <nav className="flex gap-4 items-center">
             {renderAuthButtons()}
@@ -140,7 +140,7 @@ export function LandingPage() {
 
       <footer className="border-t py-8 text-center text-muted-foreground">
         <div className="container mx-auto">
-          <p>&copy; 2024 Resume Builder. All rights reserved.</p>
+          <p>&copy; 2024 Pure Resume. All rights reserved.</p>
         </div>
       </footer>
     </div>
