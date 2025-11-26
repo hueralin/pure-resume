@@ -165,7 +165,10 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
 
   const handleAddModule = (moduleId: string) => {
     const instanceId = `${moduleId}-${Date.now()}`
-    addModule(moduleId, instanceId, {})
+    const config = moduleConfigs.find(c => c.id === moduleId)
+    // 列表类型模块初始化为 { items: [] }，单体模块初始化为 {}
+    const initialData = config?.allowMultiple ? { items: [] } : {}
+    addModule(moduleId, instanceId, initialData)
     setIsDirty(true)
   }
 

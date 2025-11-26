@@ -1,0 +1,25 @@
+{
+  "id": "certifications",
+  "name": "证书荣誉",
+  "icon": "Award",
+  "allowMultiple": true,
+  "unique": true,
+  "order": 6,
+  "fields": [
+    {
+      "id": "certName",
+      "label": "证书名称",
+      "type": "text",
+      "required": false,
+      "placeholder": "如：PMP认证、AWS认证"
+    },
+    {
+      "id": "issueDate",
+      "label": "获得时间",
+      "type": "date",
+      "required": false,
+      "placeholder": "选择获得时间"
+    }
+  ]
+}
+

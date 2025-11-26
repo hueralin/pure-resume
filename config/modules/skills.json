@@ -1,0 +1,25 @@
+{
+  "id": "skills",
+  "name": "专业技能",
+  "icon": "Wrench",
+  "allowMultiple": true,
+  "unique": true,
+  "order": 5,
+  "fields": [
+    {
+      "id": "skillName",
+      "label": "技能名称",
+      "type": "text",
+      "required": false,
+      "placeholder": "如：Photoshop、JavaScript"
+    },
+    {
+      "id": "proficiency",
+      "label": "熟练程度",
+      "type": "select",
+      "required": false,
+      "options": ["入门", "熟练", "精通", "专家"]
+    }
+  ]
+}
+

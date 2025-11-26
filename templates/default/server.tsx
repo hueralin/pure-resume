@@ -1,168 +1,374 @@
 import { ResumeData } from '@/types/resume'
-import { getModuleConfig } from '@/lib/modules'
 
 interface DefaultTemplateProps {
   data: ResumeData
 }
 
+// 格式化日期显示（年.月）
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '至今'
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+// 格式化完整日期显示（年.月.日）
+function formatFullDate(dateStr: string | undefined): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+}
+
+// 获取熟练度对应的进度条宽度
+function getProficiencyWidth(proficiency: string): string {
+  const map: Record<string, string> = {
+    '入门': '36%',
+    '熟练': '60%',
+    '精通': '78%',
+    '专家': '84%',
+  }
+  return map[proficiency] || '50%'
+}
+
+// 安全获取模块的 items 数组
+function getModuleItems(module: any): any[] {
+  return module?.data?.items || []
+}
+
 export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
+  // 查找各个模块的数据
+  const basicInfo = data.modules.find(m => m.moduleId === 'basic-info')?.data || {}
+  const educationModule = data.modules.find(m => m.moduleId === 'education')
+  const workModule = data.modules.find(m => m.moduleId === 'work-experience')
+  const projectModule = data.modules.find(m => m.moduleId === 'project-experience')
+  const skillsModule = data.modules.find(m => m.moduleId === 'skills')
+  const certificationsModule = data.modules.find(m => m.moduleId === 'certifications')
+
+  const themeColor = data.globalSettings?.themeColor || '#3D69F2'
+
+  // 共用样式
+  const styles = {
+    container: {
+      width: '595px',
+      minHeight: '842px',
+      backgroundColor: '#ffffff',
+      color: '#212121',
+      fontFamily: 'Hind, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      padding: '40px',
+      fontSize: '11px',
+      lineHeight: '19px',
+      boxSizing: 'border-box' as const,
+    },
+    header: {
+      display: 'flex',
+      gap: '32px',
+      marginBottom: '20px',
+    },
+    avatar: {
+      width: '115px',
+      height: '115px',
+      borderRadius: '5px',
+      backgroundColor: '#e5e7eb',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      flexShrink: 0,
+    },
+    title: {
+      fontSize: '10px',
+      letterSpacing: '0.8px',
+      opacity: 0.6,
+      marginBottom: '4px',
+      lineHeight: '10px',
+    },
+    name: {
+      fontFamily: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+      fontWeight: 700,
+      fontSize: '24px',
+      lineHeight: '25px',
+      marginBottom: '16px',
+    },
+    contactGrid: {
+      display: 'flex',
+      gap: '44px',
+    },
+    contactColumn: {
+      opacity: 0.6,
+    },
+    divider: {
+      height: '1px',
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      marginBottom: '20px',
+    },
+    sectionTitle: {
+      fontFamily: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+      fontWeight: 700,
+      fontSize: '13px',
+      letterSpacing: '0.2px',
+      lineHeight: '15px',
+      marginBottom: '30px',
+    },
+    mainContent: {
+      display: 'flex',
+      gap: '47px',
+    },
+    leftColumn: {
+      flex: 1,
+      maxWidth: '300px',
+    },
+    rightColumn: {
+      width: '168px',
+    },
+    itemRow: {
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: '10px',
+      marginBottom: '4px',
+    },
+    dateText: {
+      fontSize: '10px',
+      opacity: 0.5,
+      lineHeight: '18px',
+      width: '80px',
+    },
+    itemTitle: {
+      fontFamily: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+      fontWeight: 500,
+      lineHeight: '18px',
+    },
+    itemDesc: {
+      opacity: 0.6,
+      marginLeft: '90px',
+      whiteSpace: 'pre-wrap' as const,
+    },
+    skillRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '6px',
+    },
+    progressBar: {
+      height: '3px',
+      backgroundColor: '#EDEDED',
+      borderRadius: '9999px',
+      position: 'relative' as const,
+      marginBottom: '7px',
+    },
+    progressFill: {
+      position: 'absolute' as const,
+      height: '100%',
+      borderRadius: '9999px',
+      backgroundColor: themeColor,
+    },
+    certRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      lineHeight: '19px',
+      marginBottom: '5px',
+    },
+  }
+
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#fafafa',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-    }}>
-      <div style={{ maxWidth: '896px', margin: '0 auto', padding: '48px 24px' }}>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '4px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e5e7eb',
-          overflow: 'hidden'
-        }}>
-          <div style={{ padding: '48px' }}>
-            {data.modules.map((module, index) => {
-              const config = getModuleConfig(module.moduleId)
-              if (!config) return null
+    <div style={styles.container}>
+      {/* 头部区域 */}
+      <div style={styles.header}>
+        {/* 头像 */}
+        <div 
+          style={{
+            ...styles.avatar,
+            backgroundImage: basicInfo.avatar ? `url(${basicInfo.avatar})` : undefined,
+          }}
+        />
 
-              // 渲染标题
-              const renderTitle = () => (
-                <div style={{ marginBottom: '24px' }}>
-                  <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    letterSpacing: '-0.02em',
-                    marginBottom: '8px',
-                    lineHeight: '1.2'
-                  }}>
-                    {config.name}
-                  </h2>
-                  <div style={{
-                    height: '2px',
-                    width: '48px',
-                    backgroundColor: '#6366f1',
-                    borderRadius: '1px'
-                  }} />
-                </div>
-              )
+        {/* 姓名和联系方式 */}
+        <div style={{ flex: 1 }}>
+          {/* 职位 */}
+          {basicInfo.title && (
+            <div style={styles.title}>
+              {basicInfo.title}
+            </div>
+          )}
+          
+          {/* 姓名 */}
+          <h1 style={styles.name}>
+            {basicInfo.name || '您的姓名'}
+          </h1>
 
-              // 情况1：列表型模块（教育经历、工作经历等）
-              if (config.allowMultiple && module.data.items && Array.isArray(module.data.items)) {
-                return (
-                  <div 
-                    key={module.instanceId}
-                    style={{
-                      marginBottom: index < data.modules.length - 1 ? '32px' : '0',
-                      paddingTop: index > 0 ? '32px' : '0',
-                      borderTop: index > 0 ? '1px solid #f1f5f9' : 'none'
-                    }}
-                  >
-                    {renderTitle()}
+          {/* 联系方式 - 两列布局 */}
+          <div style={styles.contactGrid}>
+            <div style={styles.contactColumn}>
+              {basicInfo.location && <div>{basicInfo.location}</div>}
+              {basicInfo.email && <div>{basicInfo.email}</div>}
+              {basicInfo.phone && <div>{basicInfo.phone}</div>}
+            </div>
+            <div style={styles.contactColumn}>
+              {basicInfo.website && <div>{basicInfo.website}</div>}
+            </div>
+          </div>
+        </div>
+      </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                      {module.data.items.map((item: any, itemIndex: number) => (
-                        <div 
-                          key={itemIndex}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px',
-                            paddingBottom: itemIndex < module.data.items.length - 1 ? '24px' : '0',
-                            borderBottom: itemIndex < module.data.items.length - 1 ? '1px solid #f1f5f9' : 'none'
-                          }}
-                        >
-                          {config.fields.map((field) => {
-                            const value = item[field.id]
-                            if (!value) return null
+      {/* 分隔线 */}
+      <div style={styles.divider} />
 
-                            return (
-                              <div 
-                                key={field.id}
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'row',
-                                  gap: '16px'
-                                }}
-                              >
-                                <span style={{
-                                  fontWeight: '500',
-                                  fontSize: '14px',
-                                  color: '#64748b',
-                                  minWidth: '96px',
-                                  flexShrink: 0
-                                }}>
-                                  {field.label}
-                                </span>
-                                <span style={{
-                                  fontSize: '16px',
-                                  color: '#1e293b',
-                                  flex: 1,
-                                  whiteSpace: field.type === 'textarea' ? 'pre-wrap' : 'normal'
-                                }}>
-                                  {value}
-                                </span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ))}
+      {/* 个人简介 Profile */}
+      {basicInfo.summary && (
+        <>
+          <div style={{ marginBottom: '20px' }}>
+            <h2 style={styles.sectionTitle}>
+              个人简介
+            </h2>
+            <div style={{ opacity: 0.6, whiteSpace: 'pre-wrap' }}>
+              {basicInfo.summary}
+            </div>
+          </div>
+          <div style={styles.divider} />
+        </>
+      )}
+
+      {/* 主体内容区 - 两栏布局 */}
+      <div style={styles.mainContent}>
+        {/* 左栏 */}
+        <div style={styles.leftColumn}>
+          {/* 教育背景 */}
+          {getModuleItems(educationModule).length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={styles.sectionTitle}>
+                教育经历
+              </h2>
+              <div>
+                {getModuleItems(educationModule).map((item: any, index: number) => (
+                  <div key={index} style={{ marginBottom: index < educationModule.data.items.length - 1 ? '16px' : 0 }}>
+                    <div style={styles.itemRow}>
+                      <span style={styles.dateText}>
+                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      </span>
+                      <span style={styles.itemTitle}>
+                        {item.school}
+                      </span>
+                    </div>
+                    {(item.major || item.degree || item.description) && (
+                      <div style={styles.itemDesc}>
+                        {item.degree && item.major ? `${item.degree}，${item.major}` : item.major || item.degree}
+                        {item.description && <div style={{ marginTop: '4px' }}>{item.description}</div>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 工作经历 */}
+          {getModuleItems(workModule).length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={styles.sectionTitle}>
+                工作经历
+              </h2>
+              <div>
+                {getModuleItems(workModule).map((item: any, index: number) => (
+                  <div key={index} style={{ marginBottom: index < getModuleItems(workModule).length - 1 ? '16px' : 0 }}>
+                    <div style={styles.itemRow}>
+                      <span style={styles.dateText}>
+                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      </span>
+                      <span style={styles.itemTitle}>
+                        {item.position}{item.company ? ` @ ${item.company}` : ''}
+                      </span>
+                    </div>
+                    {item.description && (
+                      <div style={styles.itemDesc}>
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 项目经历 */}
+          {getModuleItems(projectModule).length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={styles.sectionTitle}>
+                项目经历
+              </h2>
+              <div>
+                {getModuleItems(projectModule).map((item: any, index: number) => (
+                  <div key={index} style={{ marginBottom: index < getModuleItems(projectModule).length - 1 ? '16px' : 0 }}>
+                    <div style={styles.itemRow}>
+                      <span style={styles.dateText}>
+                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      </span>
+                      <span style={styles.itemTitle}>
+                        {item.projectName}{item.role ? ` · ${item.role}` : ''}
+                      </span>
+                    </div>
+                    {item.description && (
+                      <div style={styles.itemDesc}>
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 右栏 */}
+        <div style={styles.rightColumn}>
+          {/* 技能 */}
+          {getModuleItems(skillsModule).filter((item: any) => item.skillName).length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={styles.sectionTitle}>
+                专业技能
+              </h2>
+              <div>
+                {getModuleItems(skillsModule).filter((item: any) => item.skillName).map((item: any, index: number) => (
+                  <div key={index}>
+                    <div style={styles.skillRow}>
+                      <span style={styles.itemTitle}>
+                        {item.skillName}
+                      </span>
+                      <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px' }}>
+                        {item.proficiency}
+                      </span>
+                    </div>
+                    {/* 进度条 */}
+                    <div style={styles.progressBar}>
+                      <div 
+                        style={{ 
+                          ...styles.progressFill,
+                          width: getProficiencyWidth(item.proficiency),
+                        }}
+                      />
                     </div>
                   </div>
-                )
-              }
+                ))}
+              </div>
+            </div>
+          )}
 
-              // 情况2：单体模块
-              return (
-                <div 
-                  key={module.instanceId}
-                  style={{
-                    marginBottom: index < data.modules.length - 1 ? '32px' : '0',
-                    paddingTop: index > 0 ? '32px' : '0',
-                    borderTop: index > 0 ? '1px solid #f1f5f9' : 'none'
-                  }}
-                >
-                  {renderTitle()}
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {config.fields.map((field) => {
-                      const value = module.data[field.id]
-                      if (!value) return null
-
-                      return (
-                        <div 
-                          key={field.id}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            gap: '16px'
-                          }}
-                        >
-                          <span style={{
-                            fontWeight: '500',
-                            fontSize: '14px',
-                            color: '#64748b',
-                            minWidth: '96px',
-                            flexShrink: 0
-                          }}>
-                            {field.label}
-                          </span>
-                          <span style={{
-                            fontSize: '16px',
-                            color: '#1e293b',
-                            flex: 1,
-                            whiteSpace: field.type === 'textarea' ? 'pre-wrap' : 'normal'
-                          }}>
-                            {value}
-                          </span>
-                        </div>
-                      )
-                    })}
+          {/* 证书 */}
+          {getModuleItems(certificationsModule).filter((item: any) => item.certName).length > 0 && (
+            <div>
+              <h2 style={styles.sectionTitle}>
+                证书荣誉
+              </h2>
+              <div>
+                {getModuleItems(certificationsModule).filter((item: any) => item.certName).map((item: any, index: number) => (
+                  <div key={index} style={styles.certRow}>
+                    <span style={styles.itemTitle}>
+                      {item.certName}
+                    </span>
+                    <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px' }}>
+                      {formatFullDate(item.issueDate)}
+                    </span>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
