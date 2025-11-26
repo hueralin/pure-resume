@@ -71,10 +71,46 @@ export async function POST(request: NextRequest) {
     })
 
     const page = await browser.newPage()
-    await page.setContent(fullHtml, { waitUntil: 'load' })
+    
+    // 设置视口宽度为595px（匹配预览宽度），高度设置足够大以容纳内容
+    await page.setViewport({ width: 595, height: 2000 })
+    
+    await page.setContent(fullHtml, { waitUntil: 'networkidle0' })
+    
+    // 等待内容完全渲染，包括字体加载
+    await page.evaluate(() => document.fonts.ready)
+    
+    // 额外等待确保渲染完成
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // 获取内容容器的实际高度
+    const contentHeight = await page.evaluate(() => {
+      // 查找简历容器（宽度595px的div）
+      const container = document.querySelector('body > div[style*="width: 595px"]') as HTMLElement
+      if (container) {
+        // 使用getBoundingClientRect获取精确高度，包括padding
+        const rect = container.getBoundingClientRect()
+        return Math.ceil(rect.height)
+      }
+      // 如果没有找到，使用body的高度
+      const body = document.body
+      const html = document.documentElement
+      return Math.ceil(Math.max(
+        body.scrollHeight,
+        body.offsetHeight,
+        html.clientHeight,
+        html.scrollHeight,
+        html.offsetHeight
+      ))
+    })
+    
+    // 根据实际内容高度生成PDF，宽度固定为595px（匹配预览）
+    // 不设置最小高度，完全根据内容自适应
+    const pdfHeight = contentHeight
     
     const pdf = await page.pdf({
-      format: 'A4',
+      width: '595px',
+      height: `${pdfHeight}px`,
       printBackground: true,
       margin: {
         top: '0',

@@ -49,7 +49,6 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
   const styles = {
     container: {
       width: '595px',
-      minHeight: '842px',
       backgroundColor: '#ffffff',
       color: '#212121',
       fontFamily: 'Hind, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

@@ -157,9 +157,9 @@ export default function ResumeListPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-      toast.success('PDF 导出成功')
+      toast.success('简历下载成功')
     } catch {
-      toast.error('导出PDF失败，请稍后重试')
+      toast.error('简历下载失败')
     }
   }
 

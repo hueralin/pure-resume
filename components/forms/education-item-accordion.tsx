@@ -213,10 +213,10 @@ export function EducationItemAccordion({
                     <Input.TextArea
                       placeholder="可填写主要课程、成绩、荣誉等（选填）"
                       {...field}
-                      rows={3}
+                      rows={6}
                       allowClear
                       className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
-                      style={{ resize: 'none' }}
+                      style={{ resize: 'vertical' }}
                     />
                   </Form.Item>
                 )}

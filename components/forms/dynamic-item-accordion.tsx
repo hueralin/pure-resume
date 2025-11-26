@@ -75,10 +75,10 @@ export function DynamicItemAccordion({
               <Input.TextArea 
                 placeholder={field.placeholder} 
                 {...formField}
-                rows={3}
+                rows={6}
                 allowClear
                 className="bg-[#09090B] border border-[#27272A] text-white placeholder:text-[#A1A1AA]"
-                style={{ resize: 'none' }}
+                style={{ resize: 'vertical' }}
               />
             ) : field.type === 'select' ? (
               <Select
