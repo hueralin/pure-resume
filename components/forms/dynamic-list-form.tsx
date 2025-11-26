@@ -163,17 +163,31 @@ export function DynamicListForm({ moduleConfig, initialData, onChange }: Dynamic
 
     if (!over || active.id === over.id) return
 
-    // 通过 _id 查找索引
-    const oldIndex = items.findIndex(item => item._id === active.id)
-    const newIndex = items.findIndex(item => item._id === over.id)
+    // 获取当前表单的值，确保包含用户输入但未保存的数据
+    const currentFormItems = form.getValues('items') || []
+    
+    // 通过 _id 查找索引（使用表单当前值）
+    const oldIndex = currentFormItems.findIndex((item: any) => item._id === active.id)
+    const newIndex = currentFormItems.findIndex((item: any) => item._id === over.id)
     
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
 
     isDraggingRef.current = true
-    const newItems = arrayMove(items, oldIndex, newIndex)
+    // 使用表单当前值进行排序，保留用户输入
+    const newFormItems = arrayMove(currentFormItems, oldIndex, newIndex)
+    
+    // 同步更新 items 状态，确保 _id 和表单值都正确
+    const newItems = newFormItems.map((formItem: any) => {
+      // 确保每个 item 都有 _id
+      if (!formItem._id) {
+        formItem._id = `item-${Date.now()}-${newFormItems.indexOf(formItem)}`
+      }
+      return formItem
+    })
+    
     setItems(newItems)
-    // 直接更新表单值
-    form.setValue('items', newItems, { shouldDirty: false })
+    // 直接更新表单值，保留所有表单输入
+    form.setValue('items', newFormItems, { shouldDirty: false })
     
     setTimeout(() => {
       isDraggingRef.current = false

@@ -115,7 +115,7 @@ export default function ResumeListPage() {
     }
   }
 
-  const handleDownload = async (resumeId: string) => {
+  const handleDownload = async (resumeId: string): Promise<void> => {
     try {
       const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
       if (!authToken) {
@@ -137,12 +137,22 @@ export default function ResumeListPage() {
         throw new Error(errorData.error || '导出失败')
       }
 
+      // 从响应头获取文件名，如果没有则使用默认名称
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let fileName = `resume-${resumeId}.pdf`
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = decodeURIComponent(fileNameMatch[1].replace(/['"]/g, ''))
+        }
+      }
+
       // 下载 PDF
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `resume-${resumeId}.pdf`
+      a.download = fileName
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)

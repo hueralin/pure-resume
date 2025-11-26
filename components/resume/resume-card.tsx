@@ -3,19 +3,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Button, Modal } from 'antd'
-import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
+import { DownloadOutlined, CloseOutlined, LoadingOutlined } from '@ant-design/icons'
 
 interface ResumeCardProps {
   id: string
   title: string
   updatedAt: string
   onDelete: (id: string) => void
-  onDownload: (id: string) => void
+  onDownload: (id: string) => Promise<void>
 }
 
 export function ResumeCard({ id, title, updatedAt, onDelete, onDownload }: ResumeCardProps) {
   const router = useRouter()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   const handleEdit = () => {
     router.push(`/resume/${id}`)
@@ -23,7 +24,14 @@ export function ResumeCard({ id, title, updatedAt, onDelete, onDownload }: Resum
 
   const handleDownloadClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    onDownload(id)
+    if (isDownloading) return
+    
+    setIsDownloading(true)
+    try {
+      await onDownload(id)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   const handleDelete = async () => {
@@ -73,10 +81,12 @@ export function ResumeCard({ id, title, updatedAt, onDelete, onDownload }: Resum
         >
           <Button
             type="text"
-            icon={<DownloadOutlined />}
+            icon={isDownloading ? <LoadingOutlined /> : <DownloadOutlined />}
             onClick={handleDownloadClick}
             title="下载PDF"
             size="small"
+            loading={isDownloading}
+            disabled={isDownloading}
           />
           <Button
             type="text"

@@ -112,7 +112,7 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
     },
     leftColumn: {
       flex: 1,
-      maxWidth: '300px',
+      maxWidth: '400px',
     },
     rightColumn: {
       width: '168px',
@@ -172,33 +172,29 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
       {/* 头部区域 */}
       <div style={styles.header}>
         {/* 头像 */}
-        <div 
-          style={{
-            ...styles.avatar,
-            backgroundImage: basicInfo.avatar ? `url(${basicInfo.avatar})` : undefined,
-          }}
-        />
+        {basicInfo.avatar && (
+          <div 
+            style={{
+              ...styles.avatar,
+              backgroundImage: `url(${basicInfo.avatar})`,
+            }}
+          />
+        )}
 
         {/* 姓名和联系方式 */}
         <div style={{ flex: 1 }}>
-          {/* 职位 */}
-          {basicInfo.title && (
-            <div style={styles.title}>
-              {basicInfo.title}
-            </div>
-          )}
-          
           {/* 姓名 */}
           <h1 style={styles.name}>
             {basicInfo.name || '您的姓名'}
           </h1>
 
-          {/* 联系方式 - 两列布局 */}
+          {/* 联系方式 - 两列布局（与预览一致：title, phone, email, location） */}
           <div style={styles.contactGrid}>
             <div style={styles.contactColumn}>
-              {basicInfo.location && <div>{basicInfo.location}</div>}
-              {basicInfo.email && <div>{basicInfo.email}</div>}
+              {basicInfo.title && <div>{basicInfo.title}</div>}
               {basicInfo.phone && <div>{basicInfo.phone}</div>}
+              {basicInfo.email && <div>{basicInfo.email}</div>}
+              {basicInfo.location && <div>{basicInfo.location}</div>}
             </div>
             <div style={styles.contactColumn}>
               {basicInfo.website && <div>{basicInfo.website}</div>}
@@ -236,8 +232,10 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
                 教育经历
               </h2>
               <div>
-                {getModuleItems(educationModule).map((item: any, index: number) => (
-                  <div key={index} style={{ marginBottom: index < educationModule.data.items.length - 1 ? '16px' : 0 }}>
+                {getModuleItems(educationModule).map((item: any, index: number) => {
+                  const items = getModuleItems(educationModule)
+                  return (
+                  <div key={index} style={{ marginBottom: index < items.length - 1 ? '16px' : 0 }}>
                     <div style={styles.itemRow}>
                       <span style={styles.dateText}>
                         {formatDate(item.startDate)} – {formatDate(item.endDate)}
@@ -253,7 +251,8 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
                       </div>
                     )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
