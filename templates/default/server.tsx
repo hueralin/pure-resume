@@ -159,8 +159,7 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
     },
     certRow: {
       display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: 'column',
       lineHeight: '19px',
       marginBottom: '5px',
     },
@@ -356,11 +355,11 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
               <div>
                 {getModuleItems(certificationsModule).filter((item: any) => item.certName).map((item: any, index: number) => (
                   <div key={index} style={styles.certRow}>
+                    <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px', marginBottom: '4px' }}>
+                      {formatFullDate(item.issueDate)}
+                    </span>
                     <span style={styles.itemTitle}>
                       {item.certName}
-                    </span>
-                    <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px' }}>
-                      {formatFullDate(item.issueDate)}
                     </span>
                   </div>
                 ))}

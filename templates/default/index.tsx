@@ -245,12 +245,12 @@ export function DefaultTemplate({ data }: DefaultTemplateProps) {
               </h2>
               <div className="space-y-[5px]">
                 {getModuleItems(certificationsModule).filter((item: any) => item.certName).map((item: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center" style={{ lineHeight: '19px' }}>
+                  <div key={index} className="flex flex-col" style={{ lineHeight: '19px' }}>
+                    <span className="text-[10px] opacity-50 mb-1" style={{ lineHeight: '18px' }}>
+                      {formatFullDate(item.issueDate)}
+                    </span>
                     <span className="font-['IBM_Plex_Sans',sans-serif] font-medium" style={{ lineHeight: '18px' }}>
                       {item.certName}
-                    </span>
-                    <span className="text-[10px] opacity-50" style={{ lineHeight: '18px' }}>
-                      {formatFullDate(item.issueDate)}
                     </span>
                   </div>
                 ))}

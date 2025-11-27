@@ -347,21 +347,21 @@ export function generateResumeHTML(data: ResumeData): string {
           ${certItems.map((item: any) => `
             <div style="${styleToString({
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flexDirection: 'column',
               lineHeight: '19px',
               marginBottom: '5px',
             })}">
+              <span style="${styleToString({
+                fontSize: '10px',
+                opacity: 0.5,
+                lineHeight: '18px',
+                marginBottom: '4px',
+              })}">${formatFullDate(item.issueDate)}</span>
               <span style="${styleToString({
                 fontFamily: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
                 fontWeight: 500,
                 lineHeight: '18px',
               })}">${escapeHtml(item.certName)}</span>
-              <span style="${styleToString({
-                fontSize: '10px',
-                opacity: 0.5,
-                lineHeight: '18px',
-              })}">${formatFullDate(item.issueDate)}</span>
             </div>
           `).join('')}
         </div>
