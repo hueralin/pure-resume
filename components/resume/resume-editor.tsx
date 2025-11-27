@@ -9,7 +9,7 @@ import { useResumeStore, useAuthStore } from '@/lib/store'
 import { loadModuleConfigs } from '@/lib/modules'
 import { useFullscreen } from '@/hooks/use-fullscreen'
 import { Button, Input, App } from 'antd'
-import { SaveOutlined, PlusOutlined, ArrowLeftOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
+import { SaveOutlined, PlusOutlined, ArrowLeftOutlined, FullscreenOutlined, FullscreenExitOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/toast'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -29,6 +29,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   const [isDirty, setIsDirty] = useState(false)
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
   const [titleError, setTitleError] = useState<string>('')
+  const [isDownloading, setIsDownloading] = useState(false)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   const moduleConfigs = useMemo(() => loadModuleConfigs(), [])
@@ -186,15 +187,15 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
     })
   }
 
-  const handleSave = async () => {
-    if (!currentResume) return
+  const handleSave = async (): Promise<string | null> => {
+    if (!currentResume) return null
 
     // 校验简历名称
     const trimmedTitle = resumeTitle.trim()
     if (!trimmedTitle) {
       setTitleError('请输入简历名称')
       toast.error('请输入简历名称')
-      return
+      return null
     }
     setTitleError('')
 
@@ -203,7 +204,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       if (!authToken) {
         toast.error('请先登录')
         router.push('/login')
-        return
+        return null
       }
 
       const response = await fetch('/api/resumes', {
@@ -232,8 +233,86 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       if (!resumeId || resumeId === 'new') {
         router.replace(`/resume/${savedResume.id}`)
       }
+
+      return savedResume.id
     } catch (error: any) {
       toast.error(error.message || '保存失败，请稍后重试')
+      return null
+    }
+  }
+
+  const handleDownload = async () => {
+    // 如果没有保存的简历ID，先提示保存
+    if (!currentResumeId) {
+      modal.confirm({
+        title: '提示',
+        content: '简历尚未保存，请先保存后再下载。是否现在保存？',
+        okText: '保存并下载',
+        cancelText: '取消',
+        onOk: async () => {
+          const savedResumeId = await handleSave()
+          // 保存成功后自动下载
+          if (savedResumeId) {
+            await downloadResume(savedResumeId)
+          }
+        },
+      })
+      return
+    }
+
+    await downloadResume(currentResumeId)
+  }
+
+  const downloadResume = async (resumeIdToDownload: string) => {
+    try {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+      if (!authToken) {
+        toast.error('请先登录')
+        router.push('/login')
+        return
+      }
+
+      setIsDownloading(true)
+
+      const response = await fetch('/api/export/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ resumeId: resumeIdToDownload }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || '导出失败')
+      }
+
+      // 从响应头获取文件名，如果没有则使用默认名称
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let fileName = `${resumeTitle || 'resume'}.pdf`
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = decodeURIComponent(fileNameMatch[1].replace(/['"]/g, ''))
+        }
+      }
+
+      // 下载 PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.success('简历下载成功')
+    } catch (error: any) {
+      toast.error(error.message || '简历下载失败')
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -274,6 +353,14 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
             icon={<SaveOutlined />}
             onClick={handleSave} 
             disabled={!currentResume}
+          />
+          <Button 
+            type="default"
+            title="下载简历"
+            icon={<DownloadOutlined />}
+            onClick={handleDownload}
+            disabled={!currentResume}
+            loading={isDownloading}
           />
         </div>
       </div>
