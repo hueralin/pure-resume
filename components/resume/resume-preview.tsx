@@ -2,7 +2,6 @@
 
 import { useResumeStore } from '@/lib/store'
 import { DefaultTemplate } from '@/templates/default'
-
 import { Card } from 'antd'
 
 export function ResumePreview() {
@@ -17,7 +16,7 @@ export function ResumePreview() {
   }
 
   return (
-    <div className="border shadow-lg">
+    <div className="border shadow-lg" style={{ width: '595px' }}>
       <DefaultTemplate data={currentResume} />
     </div>
   )

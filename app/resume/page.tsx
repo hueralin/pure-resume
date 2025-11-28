@@ -9,6 +9,7 @@ import { useToast } from '@/lib/toast'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ResumeCard } from '@/components/resume/resume-card'
 import { AddResumeCard } from '@/components/resume/add-resume-card'
+import { ResumeListSkeleton } from '@/components/resume/resume-list-skeleton'
 import { useFullscreen } from '@/hooks/use-fullscreen'
 
 interface Resume {
@@ -201,14 +202,7 @@ export default function ResumeListPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-4 text-muted-foreground">加载中...</p>
-        </div>
-      </div>
-    )
+    return <ResumeListSkeleton />
   }
 
   return (
@@ -236,7 +230,7 @@ export default function ResumeListPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-[13px] min-w-[1000px]">
+        <div className="grid grid-cols-4 gap-[13px]">
           {/* 固定的添加简历卡片 */}
           <AddResumeCard onClick={handleCreateNew} />
           

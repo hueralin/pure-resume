@@ -49,12 +49,14 @@ export function DefaultTemplate({ data }: DefaultTemplateProps) {
 
   return (
     <div 
-      className="w-full bg-white text-[#212121] font-['Hind',sans-serif]"
+      className="bg-white text-[#212121] font-['Hind',sans-serif]"
       style={{ 
-        aspectRatio: '595 / 842',
+        width: '595px',
+        minHeight: '842px',
         padding: '40px',
         fontSize: '11px',
         lineHeight: '19px',
+        boxSizing: 'border-box',
       }}
     >
       {/* 头部区域 */}

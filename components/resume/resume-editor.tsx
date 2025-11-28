@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ResumePreview } from './resume-preview'
 import { ResumeModuleAccordion } from './resume-module-accordion'
 import { ModuleSelectDialog } from './module-select-dialog'
+import { DynamicForm } from '@/components/forms/dynamic-form'
+import { DynamicListForm } from '@/components/forms/dynamic-list-form'
+import { ResumeEditorSkeleton } from './resume-editor-skeleton'
 import { useResumeStore, useAuthStore } from '@/lib/store'
 import { loadModuleConfigs } from '@/lib/modules'
 import { useFullscreen } from '@/hooks/use-fullscreen'
@@ -12,7 +15,7 @@ import { Button, Input, App } from 'antd'
 import { SaveOutlined, PlusOutlined, ArrowLeftOutlined, FullscreenOutlined, FullscreenExitOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/lib/toast'
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 
@@ -24,12 +27,13 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   const resumeId = propResumeId || searchParams.get('id')
   const { currentResume, currentResumeId, currentResumeTitle, setCurrentResume, clearResume, addModule, removeModule, reorderModules } = useResumeStore()
   const { token } = useAuthStore()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // 初始状态为true，显示骨架屏
   const [resumeTitle, setResumeTitle] = useState('我的简历')
   const [isDirty, setIsDirty] = useState(false)
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false)
   const [titleError, setTitleError] = useState<string>('')
   const [isDownloading, setIsDownloading] = useState(false)
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
   const { isFullscreen, toggleFullscreen } = useFullscreen()
 
   const moduleConfigs = useMemo(() => loadModuleConfigs(), [])
@@ -87,20 +91,29 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
   // 加载简历数据
   useEffect(() => {
     const loadResume = async () => {
-      // 如果已经有当前简历且ID匹配，则不重新加载（除非是为了刷新）
-      // 但为了解决用户反馈的“脏数据”问题，我们应该强制加载
-      if (!resumeId || resumeId === 'new') return 
+      // 如果已经有当前简历且ID匹配，则不重新加载
+      if (!resumeId || resumeId === 'new') {
+        setLoading(false)
+        return 
+      }
       
-      if (currentResumeId === resumeId && !isDirty) return
+      // 如果已经有数据且ID匹配，直接返回，不显示loading
+      if (currentResumeId === resumeId && currentResume) {
+        setLoading(false)
+        return
+      }
+
+      // 需要加载时，先设置loading状态
+      setLoading(true)
 
       try {
         const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
         if (!authToken) {
           router.push('/login')
+          setLoading(false)
           return
         }
 
-        setLoading(true)
         const response = await fetch(`/api/resumes/${resumeId}`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
@@ -114,23 +127,23 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
           setIsDirty(false) // 加载后重置脏状态
         } else {
           // 如果简历不存在，初始化空简历
-          setCurrentResume({ modules: [] }, null, null)
+          setCurrentResume({ modules: [] }, undefined, undefined)
         }
       } catch (error) {
         console.error('Failed to load resume:', error)
-        setCurrentResume({ modules: [] }, null, null)
+        setCurrentResume({ modules: [] }, undefined, undefined)
       } finally {
         setLoading(false)
       }
     }
 
     loadResume()
-  }, [resumeId, token, router, setCurrentResume]) // 移除 currentResumeId 依赖，防止循环调用
+  }, [resumeId, token, router, setCurrentResume, currentResumeId, currentResume]) // 添加 currentResume 依赖
 
   // 如果没有 resumeId 且没有当前简历，初始化空简历
   useEffect(() => {
     if ((!resumeId || resumeId === 'new') && !currentResume) {
-      setCurrentResume({ modules: [] }, null, null)
+      setCurrentResume({ modules: [] }, undefined, undefined)
       setResumeTitle('我的简历')
     }
   }, [resumeId, currentResume, setCurrentResume])
@@ -152,12 +165,12 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
     }
   }
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
-    if (active.id !== over.id && currentResume) {
-      const oldIndex = currentResume.modules.findIndex(m => m.instanceId === active.id)
-      const newIndex = currentResume.modules.findIndex(m => m.instanceId === over.id)
+    if (over && active.id !== over.id && currentResume) {
+      const oldIndex = currentResume.modules.findIndex(m => m.instanceId === String(active.id))
+      const newIndex = currentResume.modules.findIndex(m => m.instanceId === String(over.id))
       const newModules = arrayMove(currentResume.modules, oldIndex, newIndex)
       reorderModules(newModules.map(m => m.instanceId))
       setIsDirty(true)
@@ -170,6 +183,7 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
     // 列表类型模块初始化为 { items: [] }，单体模块初始化为 {}
     const initialData = config?.allowMultiple ? { items: [] } : {}
     addModule(moduleId, instanceId, initialData)
+    setSelectedModuleId(instanceId) // 添加模块后自动选中
     setIsDirty(true)
   }
 
@@ -183,9 +197,20 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       onOk: () => {
         removeModule(instanceId)
         setIsDirty(true)
+        // 如果删除的是当前选中的模块，清除选中状态
+        if (selectedModuleId === instanceId) {
+          setSelectedModuleId(null)
+        }
       },
     })
   }
+
+  // 稳定的模块数据更新回调
+  const handleModuleDataChange = useCallback((instanceId: string, data: Record<string, unknown> | { items: unknown[] }) => {
+    const updateModuleData = useResumeStore.getState().updateModuleData
+    updateModuleData(instanceId, data)
+    setIsDirty(true)
+  }, [])
 
   const handleSave = async (): Promise<string | null> => {
     if (!currentResume) return null
@@ -235,8 +260,9 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       }
 
       return savedResume.id
-    } catch (error: any) {
-      toast.error(error.message || '保存失败，请稍后重试')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '保存失败，请稍后重试'
+      toast.error(errorMessage)
       return null
     }
   }
@@ -309,28 +335,23 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       toast.success('简历下载成功')
-    } catch (error: any) {
-      toast.error(error.message || '简历下载失败')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '简历下载失败'
+      toast.error(errorMessage)
     } finally {
       setIsDownloading(false)
     }
   }
 
+  // 在加载时显示骨架屏
   if (loading) {
-    return (
-      <div className="h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-4 text-white">加载中...</p>
-        </div>
-      </div>
-    )
+    return <ResumeEditorSkeleton />
   }
 
   return (
     <div className="h-screen bg-black overflow-auto" suppressHydrationWarning>
       {/* Header - 标题和保存按钮 */}
-      <div className="w-[1200px] mx-auto my-6 flex justify-between items-center">
+      <div className="max-w-[1200px] mx-auto my-6 flex justify-between items-center">
         <h1 className="text-[36px] font-normal text-white">
           编辑简历
         </h1>
@@ -366,47 +387,45 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       </div>
 
       {/* 整体容器，左侧留出 40px 边距，上边距 100px */}
-      <div className="flex w-[1200px] mx-auto" style={{ height: 'calc(100vh - 150px)' }}>
-        {/* 左侧编辑区 */}
-        <div className="w-[450px] flex flex-col h-full pt-4 pb-4 pl-4 pr-4 bg-[#27272A] rounded">
+      <div className="flex max-w-[1200px] mx-auto" style={{ height: 'calc(100vh - 150px)' }}>
+        {/* 左栏：简历名称和模块列表 */}
+        <div className="w-[250px] flex flex-col h-full pt-4 pb-4 pl-2 pr-2 bg-[#27272A] rounded-l-[4px]">
           {/* 简历名称 */}
-          <div className="mb-6 flex-shrink-0">
-            <label htmlFor="resume-title" className="text-sm font-medium text-white mb-2 block">
-              简历名称 <span className="text-red-500">*</span>
+          <div className="mb-6 flex-shrink-0 px-2">
+            <label htmlFor="resume-title" className="text-xs font-medium text-white mb-2 block">
+              简历名称
             </label>
             <Input
               id="resume-title"
               value={resumeTitle}
               onChange={handleTitleChange}
-              placeholder="请输入简历名称"
+              placeholder="Email"
               allowClear
               className="w-full"
               status={titleError ? 'error' : ''}
-              style={{ background: '#09090B', borderColor: titleError ? '#ff4d4f' : '#27272A', color: 'white' }}
+              style={{ background: '#09090B', borderColor: titleError ? '#ff4d4f' : '#27272A', color: 'white', fontSize: '14px' }}
             />
             {titleError && (
-              <div className="text-sm text-red-500 mt-1">{titleError}</div>
+              <div className="text-xs text-red-500 mt-1">{titleError}</div>
             )}
           </div>
 
           {/* 简历模块 */}
           <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex-shrink-0">
-              <h2 className="text-sm font-medium text-white mb-2">简历模块</h2>
+            <div className="flex-shrink-0 px-2 mb-2">
+              <h2 className="text-xs font-medium text-white mb-2">简历模块</h2>
               
               <Button
                 type="default"
                 icon={<PlusOutlined />}
                 onClick={() => setIsModuleDialogOpen(true)}
                 block
-                className="mb-2 !h-12"
+                className="mb-2 !h-10"
                 style={{ background: '#09090B', borderColor: '#27272A', color: 'white' }}
-              >
-                添加模块
-              </Button>
+              />
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-outside">
+            <div className="flex-1 overflow-y-auto min-h-0 scrollbar-outside px-2">
               {currentResume && currentResume.modules.length > 0 ? (
                 <DndContext
                   sensors={sensors}
@@ -421,12 +440,14 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
                     <ResumeModuleAccordion
                       modules={currentResume.modules}
                       onRemove={handleRemoveModule}
+                      selectedModuleId={selectedModuleId}
+                      onSelect={setSelectedModuleId}
                     />
                   </SortableContext>
                 </DndContext>
               ) : (
-                <div className="text-center py-8 text-sm text-[#A1A1AA]">
-                  暂无模块，点击 &ldquo;添加模块&rdquo; 开始编辑
+                <div className="text-center py-8 text-xs text-[#A1A1AA]">
+                  暂无模块
                 </div>
               )}
             </div>
@@ -440,8 +461,51 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
           />
         </div>
 
-        {/* 右侧预览区 */}
-        <div className="flex flex-col h-full overflow-y-auto scrollbar-outside bg-black rounded" style={{ width: '750px', marginLeft: '30px' }}>
+        {/* 中栏：模块编辑表单 */}
+        <div className="w-[340px] flex flex-col h-full pt-4 pb-4 border-l-1 bg-[#27272A] rounded-r-[4px]">
+          {selectedModuleId && currentResume ? (() => {
+            const selectedModule = currentResume.modules.find(m => m.instanceId === selectedModuleId)
+            if (!selectedModule) return null
+            const moduleConfig = moduleConfigs.find(c => c.id === selectedModule.moduleId)
+            if (!moduleConfig) return null
+
+            return (
+              <div className="flex flex-col h-full">
+                <div className="flex-shrink-0 px-2 mb-0">
+                  <div className="bg-[#09090B] rounded-t-[4px] px-2 py-2 border-b border-[#27272A]">
+                    <h3 className="text-sm font-medium text-[#A1A1AA] leading-6">{moduleConfig.name}</h3>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0 scrollbar-outside px-2">
+                  <div className="bg-[#09090B] rounded-b-[4px] px-2 py-4">
+                    {moduleConfig.allowMultiple ? (
+                      <DynamicListForm
+                        key={selectedModuleId}
+                        moduleConfig={moduleConfig}
+                        initialData={selectedModule.data}
+                        onChange={(data) => handleModuleDataChange(selectedModuleId, data)}
+                      />
+                    ) : (
+                      <DynamicForm
+                        key={selectedModuleId}
+                        moduleConfig={moduleConfig}
+                        initialData={selectedModule.data}
+                        onChange={(data) => handleModuleDataChange(selectedModuleId, data)}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })() : (
+            <div className="flex items-center justify-center h-full text-sm text-[#A1A1AA]">
+              请从左侧选择一个模块进行编辑
+            </div>
+          )}
+        </div>
+
+        {/* 右栏：预览区 */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-outside bg-black rounded ml-4">
           <ResumePreview />
         </div>
       </div>

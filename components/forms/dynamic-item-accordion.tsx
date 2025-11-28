@@ -87,7 +87,7 @@ export function DynamicItemAccordion({
                 placeholder={field.placeholder || '请选择'}
                 allowClear
                 className="w-full"
-                popupClassName="bg-[#09090B]"
+                classNames={{ popup: 'bg-[#09090B]' }}
               >
                 {field.options?.map((option) => (
                   <Select.Option key={option} value={option}>
