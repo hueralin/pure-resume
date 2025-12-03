@@ -11,13 +11,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  resumes   Resume[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String           @id @default(cuid())
+  email                String           @unique
+  password             String
+  name                 String?
+  role                 String           @default("user")  // 用户角色：user, admin
+  resumes              Resume[]
+  subscriptionExpiresAt DateTime?        // 订阅过期时间
+  subscriptionStatus   Int              @default(1)      // 订阅状态：0=禁用 1=可用
+  activationCode       ActivationCode?   // 用户的激活码
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 }
 
 model Resume {
@@ -31,5 +35,18 @@ model Resume {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model ActivationCode {
+  id          String    @id @default(cuid())
+  code        String    @unique  // 激活码，如 "RESUME-2024-ABC123"
+  userId      String?   @unique  // 已激活的用户ID（null表示未使用），唯一约束确保一对一关系
+  expiresAt   DateTime  // 激活码过期时间（生成时的有效期）
+  activatedAt DateTime? // 激活时间
+  createdAt   DateTime  @default(now())
+  
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([code])
 }
 

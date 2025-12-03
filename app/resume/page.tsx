@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
 import { Button, Input, App, Modal } from 'antd'
-import { LogoutOutlined, FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons'
+import { LogoutOutlined, FullscreenOutlined, FullscreenExitOutlined, SettingOutlined } from '@ant-design/icons'
 import { useToast } from '@/lib/toast'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ResumeCard } from '@/components/resume/resume-card'
 import { AddResumeCard } from '@/components/resume/add-resume-card'
 import { ResumeListSkeleton } from '@/components/resume/resume-list-skeleton'
 import { useFullscreen } from '@/hooks/use-fullscreen'
+import { SubscriptionButton } from '@/components/subscription/subscription-button'
 
 interface Resume {
   id: string
@@ -22,7 +23,7 @@ export default function ResumeListPage() {
   const { modal } = App.useApp()
   const toast = useToast()
   const router = useRouter()
-  const { token, clearAuth } = useAuthStore()
+  const { token, clearAuth, user } = useAuthStore()
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -213,7 +214,8 @@ export default function ResumeListPage() {
           <h1 className="text-[36px] font-normal text-foreground">
             我的简历
           </h1>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            <SubscriptionButton />
             <ThemeToggle />
             <Button 
               type="default"
@@ -221,6 +223,14 @@ export default function ResumeListPage() {
               onClick={toggleFullscreen}
               title={isFullscreen ? "退出全屏" : "全屏"}
             />
+            {user?.role === 'admin' && (
+              <Button 
+                type="default"
+                icon={<SettingOutlined />}
+                onClick={() => router.push('/admin')}
+                title="管理后台"
+              />
+            )}
             <Button 
               type="default"
               icon={<LogoutOutlined />}

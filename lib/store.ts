@@ -45,6 +45,7 @@ interface User {
   id: string
   email: string
   name: string | null
+  role?: string
 }
 
 interface AuthState {
@@ -73,6 +74,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== 'undefined') {
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
+      // 同时存储到 cookies，供服务端使用
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
     }
     set({ user, token })
   },
@@ -80,6 +83,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      // 清除 cookies
+      document.cookie = 'token=; path=/; max-age=0'
     }
     set({ user: null, token: null })
   },

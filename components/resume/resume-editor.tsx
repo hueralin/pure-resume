@@ -247,6 +247,28 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
 
       if (!response.ok) {
         const error = await response.json()
+        
+        // 处理订阅相关错误
+        if (error.code === 'SUBSCRIPTION_REQUIRED' || error.code === 'SUBSCRIPTION_EXPIRED') {
+          const title = error.code === 'SUBSCRIPTION_REQUIRED' ? '需要激活订阅' : '订阅已过期'
+          modal.error({
+            title,
+            content: (
+              <div>
+                <p>{error.error}</p>
+                <p className="mt-2 text-sm text-gray-500">
+                  {error.code === 'SUBSCRIPTION_REQUIRED' 
+                    ? '请使用激活码激活订阅后使用完整功能。'
+                    : '您可以导出PDF保存简历，或删除不需要的简历，或使用激活码续费。'
+                  }
+                </p>
+              </div>
+            ),
+            okText: '知道了'
+          })
+          return null
+        }
+        
         throw new Error(error.error || '保存失败')
       }
 
