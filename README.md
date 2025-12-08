@@ -36,6 +36,7 @@ cp .env.example .env
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/resume_db"
 JWT_SECRET="your-secret-key-change-in-production"
+SUBSCRIPTION_DURATION_DAYS=30  # 订阅有效期（天数），默认为30天（1个月）
 ```
 
 ### 3. 初始化数据库

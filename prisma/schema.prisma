@@ -17,9 +17,9 @@ model User {
   name                 String?
   role                 String           @default("user")  // 用户角色：user, admin
   resumes              Resume[]
-  subscriptionExpiresAt DateTime?        // 订阅过期时间
-  subscriptionStatus   Int              @default(1)      // 订阅状态：0=禁用 1=可用
-  activationCode       ActivationCode?   // 用户的激活码
+  subscriptions        Subscription[]   // 用户的订阅历史
+  subscriptionExpiresAt DateTime?        // 当前订阅过期时间（冗余字段，方便快速查询）
+  banned                Boolean          @default(false)  // 账号是否被禁用（与订阅无关）
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 }
@@ -38,15 +38,27 @@ model Resume {
 }
 
 model ActivationCode {
-  id          String    @id @default(cuid())
-  code        String    @unique  // 激活码，如 "RESUME-2024-ABC123"
-  userId      String?   @unique  // 已激活的用户ID（null表示未使用），唯一约束确保一对一关系
-  expiresAt   DateTime  // 激活码过期时间（生成时的有效期）
-  activatedAt DateTime? // 激活时间
-  createdAt   DateTime  @default(now())
-  
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id          String        @id @default(cuid())
+  code        String        @unique  // 激活码，格式：XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
+  subscription Subscription? // 通过订阅表关联用户（一对一）
+  createdAt   DateTime      @default(now())
   
   @@index([code])
+}
+
+model Subscription {
+  id              String          @id @default(cuid())
+  userId          String
+  activationCodeId String         @unique  // 一个激活码只能使用一次
+  startAt         DateTime        // 订阅开始时间（激活时间）
+  expiresAt       DateTime        // 订阅过期时间（激活时+3个月）
+  status          String          @default("active")  // active, expired
+  createdAt       DateTime        @default(now())
+  
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activationCode  ActivationCode  @relation(fields: [activationCodeId], references: [id])
+  
+  @@index([userId])
+  @@index([activationCodeId])
 }
 

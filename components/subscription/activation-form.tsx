@@ -49,6 +49,16 @@ export function ActivationForm({ onSuccess }: { onSuccess?: () => void }) {
       const result = await response.json()
 
       if (!response.ok) {
+        // 处理账号被禁用
+        if (result.code === 'ACCOUNT_BANNED') {
+          const { clearAuth } = useAuthStore.getState()
+          clearAuth()
+          message.error(result.error || '账号已被禁用')
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 1500)
+          return
+        }
         message.error(result.error || '激活失败')
         return
       }

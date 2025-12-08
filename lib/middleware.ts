@@ -26,6 +26,22 @@ export function withAuth(
       )
     }
 
+    // 检查账号是否被禁用
+    const userRecord = await db.user.findUnique({
+      where: { id: user.userId },
+      select: { banned: true }
+    })
+
+    if (userRecord?.banned) {
+      return NextResponse.json(
+        { 
+          error: '账号已被禁用',
+          code: 'ACCOUNT_BANNED'
+        },
+        { status: 403 }
+      )
+    }
+
     return handler(request, user.userId, context)
   }
 }
@@ -46,13 +62,31 @@ export function withAdmin(
       )
     }
 
-    // 检查用户角色
+    // 检查用户角色和禁用状态
     const userRecord = await db.user.findUnique({
       where: { id: user.userId },
-      select: { role: true }
+      select: { role: true, banned: true }
     })
 
-    if (!userRecord || userRecord.role !== 'admin') {
+    if (!userRecord) {
+      return NextResponse.json(
+        { error: '用户不存在' },
+        { status: 404 }
+      )
+    }
+
+    // 检查账号是否被禁用
+    if (userRecord.banned) {
+      return NextResponse.json(
+        { 
+          error: '账号已被禁用',
+          code: 'ACCOUNT_BANNED'
+        },
+        { status: 403 }
+      )
+    }
+
+    if (userRecord.role !== 'admin') {
       return NextResponse.json(
         { error: '权限不足，需要管理员权限' },
         { status: 403 }

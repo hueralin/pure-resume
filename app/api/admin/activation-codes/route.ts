@@ -6,18 +6,17 @@ import { z } from 'zod'
 
 const generateSchema = z.object({
   count: z.number().int().min(1).max(100).default(1),
-  days: z.number().int().min(1).max(3650).default(90), // 激活码有效期（天），最大10年，默认90天
 })
 
 /**
  * 生成激活码
  * POST /api/admin/activation-codes
- * Body: { count: number, days: number }
+ * Body: { count: number }
  */
 export const POST = withAdmin(async (request: NextRequest, userId: string) => {
   try {
     const body = await request.json()
-    const { count, days } = generateSchema.parse(body)
+    const { count } = generateSchema.parse(body)
 
     const codes = []
     
@@ -25,20 +24,14 @@ export const POST = withAdmin(async (request: NextRequest, userId: string) => {
       // 生成25位激活码格式: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
       const code = generateActivationCode()
 
-      // 计算激活码过期时间（生成时的有效期，不是激活后的有效期）
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + days)
-
       const activationCode = await db.activationCode.create({
         data: {
-          code,
-          expiresAt
+          code
         }
       })
 
       codes.push({
         code: activationCode.code,
-        expiresAt: activationCode.expiresAt,
         createdAt: activationCode.createdAt
       })
     }
@@ -72,11 +65,13 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
   try {
     const codes = await db.activationCode.findMany({
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true
+        subscription: {
+          include: {
+            user: {
+              select: {
+                email: true
+              }
+            }
           }
         }
       },
@@ -90,14 +85,9 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
       count: codes.length,
       codes: codes.map(code => ({
         code: code.code,
-        used: !!code.userId,
-        userId: code.userId,
-        user: code.user ? {
-          email: code.user.email,
-          name: code.user.name
-        } : null,
-        expiresAt: code.expiresAt,
-        activatedAt: code.activatedAt,
+        used: !!code.subscription,
+        userEmail: code.subscription?.user?.email || null,
+        activatedAt: code.subscription?.startAt || null,
         createdAt: code.createdAt
       }))
     })

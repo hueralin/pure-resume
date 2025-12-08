@@ -16,12 +16,31 @@ export async function POST(request: NextRequest) {
     // 查找用户
     const user = await db.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        role: true,
+        banned: true
+      }
     })
 
     if (!user) {
       return NextResponse.json(
         { error: '邮箱或密码错误' },
         { status: 401 }
+      )
+    }
+
+    // 检查账号是否被禁用
+    if (user.banned) {
+      return NextResponse.json(
+        { 
+          error: '账号已被禁用，无法登录',
+          code: 'ACCOUNT_BANNED'
+        },
+        { status: 403 }
       )
     }
 

@@ -2,11 +2,13 @@
  * 生成激活码脚本
  * 
  * 使用方法：
- * pnpm generate-codes [count] [days]
+ * pnpm generate-codes [count]
  * 
  * 示例：
- * pnpm generate-codes 10 90  # 生成10个激活码，有效期90天（约3个月）
- * pnpm generate-codes 5 30   # 生成5个激活码，有效期30天
+ * pnpm generate-codes 10  # 生成10个激活码
+ * pnpm generate-codes 5   # 生成5个激活码
+ * 
+ * 注意：激活码不会过期，只有用户激活时才开始计算订阅过期时间
  */
 
 const { PrismaClient } = require('@prisma/client')
@@ -35,34 +37,28 @@ function generateActivationCode() {
   return groups.join('-')
 }
 
-async function generateCodes(count = 1, days = 90) {
+async function generateCodes(count = 1) {
   const codes = []
   
-  console.log(`开始生成 ${count} 个激活码，有效期 ${days} 天...\n`)
+  console.log(`开始生成 ${count} 个激活码...\n`)
   
   for (let i = 0; i < count; i++) {
     // 生成25位激活码格式: XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
     const code = generateActivationCode()
 
-    // 计算激活码过期时间（生成时的有效期，不是激活后的有效期）
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + days)
-
     try {
       const activationCode = await db.activationCode.create({
         data: {
-          code,
-          expiresAt
+          code
         }
       })
 
       codes.push({
         code: activationCode.code,
-        expiresAt: activationCode.expiresAt.toLocaleDateString('zh-CN'),
         createdAt: activationCode.createdAt.toLocaleDateString('zh-CN')
       })
       
-      console.log(`✓ ${i + 1}. ${code} (过期时间: ${activationCode.expiresAt.toLocaleDateString('zh-CN')})`)
+      console.log(`✓ ${i + 1}. ${code}`)
     } catch (error) {
       console.error(`✗ 生成失败: ${code}`, error)
     }
@@ -79,7 +75,6 @@ async function generateCodes(count = 1, days = 90) {
 
 // 从命令行参数获取
 const count = parseInt(process.argv[2]) || 1
-const days = parseInt(process.argv[3]) || 90
 
 generateCodes(count, days)
   .then(() => {

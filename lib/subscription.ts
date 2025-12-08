@@ -17,15 +17,17 @@ export async function checkSubscription(userId: string): Promise<SubscriptionSta
     where: { id: userId },
     select: { 
       subscriptionExpiresAt: true,
-      subscriptionStatus: true
+      banned: true
     }
   })
 
-  // 优先检查订阅状态：如果被禁用，直接返回无效
-  if (user?.subscriptionStatus === 0) {
+  // 如果账号被禁用，直接返回无效（但订阅状态按过期时间判断，用于显示）
+  if (user?.banned) {
+    const now = new Date()
+    const hasValidSubscription = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
     return {
-      valid: false,
-      state: 'expired', // 使用 expired 状态表示被禁用
+      valid: false, // 账号被禁用，无法使用
+      state: hasValidSubscription ? 'valid' : (user.subscriptionExpiresAt ? 'expired' : 'none'),
       expiresAt: user.subscriptionExpiresAt,
       daysLeft: 0
     }

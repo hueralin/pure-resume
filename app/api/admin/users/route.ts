@@ -28,14 +28,15 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
     // 状态筛选
     const now = new Date()
     if (status === 'valid') {
-      where.subscriptionStatus = 1
+      where.banned = false
       where.subscriptionExpiresAt = { gt: now }
     } else if (status === 'expired') {
-      where.subscriptionStatus = 1
+      where.banned = false
       where.subscriptionExpiresAt = { lte: now }
     } else if (status === 'banned') {
-      where.subscriptionStatus = 0
+      where.banned = true
     } else if (status === 'none') {
+      where.banned = false
       where.subscriptionExpiresAt = null
     }
 
@@ -51,7 +52,7 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
         name: true,
         role: true,
         subscriptionExpiresAt: true,
-        subscriptionStatus: true,
+        banned: true,
         createdAt: true,
         _count: {
           select: {
@@ -69,11 +70,10 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
     // 格式化数据
     const formattedUsers = users.map(user => {
       const now = new Date()
-      let subscriptionState = 'none'
+      let subscriptionState: 'none' | 'valid' | 'expired' = 'none'
       
-      if (user.subscriptionStatus === 0) {
-        subscriptionState = 'banned'
-      } else if (user.subscriptionExpiresAt) {
+      // 订阅状态只根据过期时间判断（与账号禁用状态无关）
+      if (user.subscriptionExpiresAt) {
         subscriptionState = user.subscriptionExpiresAt > now ? 'valid' : 'expired'
       }
 
@@ -82,7 +82,7 @@ export const GET = withAdmin(async (request: NextRequest, userId: string) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        subscriptionStatus: user.subscriptionStatus,
+        banned: user.banned,
         subscriptionState,
         subscriptionExpiresAt: user.subscriptionExpiresAt,
         resumeCount: user._count.resumes,

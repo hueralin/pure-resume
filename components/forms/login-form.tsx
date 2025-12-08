@@ -32,7 +32,12 @@ export function LoginForm() {
       const result = await response.json()
 
       if (!response.ok) {
-        setError(result.error || '登录失败')
+        // 如果是账号被禁用，显示特殊提示
+        if (result.code === 'ACCOUNT_BANNED') {
+          setError(result.error || '账号已被禁用，无法登录')
+        } else {
+          setError(result.error || '登录失败')
+        }
         return
       }
 

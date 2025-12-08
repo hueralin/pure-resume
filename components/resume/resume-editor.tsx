@@ -248,6 +248,20 @@ export function ResumeEditor({ resumeId: propResumeId }: { resumeId?: string }) 
       if (!response.ok) {
         const error = await response.json()
         
+        // 处理账号被禁用
+        if (error.code === 'ACCOUNT_BANNED') {
+          const { clearAuth } = useAuthStore.getState()
+          clearAuth()
+          modal.error({
+            title: '账号已被禁用',
+            content: error.error || '您的账号已被禁用，无法使用此功能。',
+            onOk: () => {
+              router.push('/login')
+            }
+          })
+          return null
+        }
+        
         // 处理订阅相关错误
         if (error.code === 'SUBSCRIPTION_REQUIRED' || error.code === 'SUBSCRIPTION_EXPIRED') {
           const title = error.code === 'SUBSCRIPTION_REQUIRED' ? '需要激活订阅' : '订阅已过期'

@@ -35,8 +35,8 @@ interface User {
   email: string
   name: string | null
   role: string
-  subscriptionStatus: number
-  subscriptionState: 'none' | 'valid' | 'expired' | 'banned'
+  banned: boolean
+  subscriptionState: 'none' | 'valid' | 'expired'
   subscriptionExpiresAt: string | null
   resumeCount: number
   createdAt: string
@@ -49,15 +49,26 @@ interface Pagination {
   totalPages: number
 }
 
-interface ActivationCode {
-  code: string
-  used: boolean
-  userId: string | null
+interface Subscription {
+  id: string
+  userId: string
   user: {
     email: string
     name: string | null
-  } | null
+    banned: boolean
+  }
+  activationCode: string
+  startAt: string
   expiresAt: string
+  status: string
+  subscriptionState: 'active' | 'expired'
+  createdAt: string
+}
+
+interface ActivationCode {
+  code: string
+  used: boolean
+  userEmail: string | null
   activatedAt: string | null
   createdAt: string
 }
@@ -68,6 +79,16 @@ export function AdminClient() {
   const token = useAuthStore((state) => state.token)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false)
+  const [subscriptionsPagination, setSubscriptionsPagination] = useState<Pagination>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0
+  })
+  const [subscriptionsSearch, setSubscriptionsSearch] = useState('')
+  const [subscriptionsStatusFilter, setSubscriptionsStatusFilter] = useState<string>('all')
   const [activationCodes, setActivationCodes] = useState<ActivationCode[]>([])
   const [codesLoading, setCodesLoading] = useState(false)
   const [createCodeModal, setCreateCodeModal] = useState(false)
@@ -109,6 +130,24 @@ export function AdminClient() {
     fetchUsers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, pagination.page, pagination.pageSize, statusFilter])
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+    // 当状态筛选改变时，重置页码
+    setSubscriptionsPagination(prev => ({ ...prev, page: 1 }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subscriptionsStatusFilter])
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+    // 当分页参数改变时，重新加载订阅列表
+    fetchSubscriptions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, subscriptionsPagination.page, subscriptionsPagination.pageSize])
 
   const fetchUsers = async () => {
     if (!token) return
@@ -156,6 +195,53 @@ export function AdminClient() {
     fetchUsers()
   }
 
+  const fetchSubscriptions = async () => {
+    if (!token) return
+
+    setSubscriptionsLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: subscriptionsPagination.page.toString(),
+        pageSize: subscriptionsPagination.pageSize.toString(),
+        status: subscriptionsStatusFilter
+      })
+      if (subscriptionsSearch) {
+        params.append('search', subscriptionsSearch)
+      }
+
+      const response = await fetch(`/api/admin/subscriptions?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        message.error(data.error || '获取订阅列表失败')
+        return
+      }
+
+      const data = await response.json()
+      setSubscriptions(data.data)
+      setSubscriptionsPagination(prev => ({
+        ...prev,
+        total: data.pagination.total,
+        totalPages: data.pagination.totalPages
+      }))
+    } catch (error) {
+      console.error('Failed to fetch subscriptions:', error)
+      message.error('获取订阅列表失败')
+    } finally {
+      setSubscriptionsLoading(false)
+    }
+  }
+
+  const handleSubscriptionsSearch = () => {
+    setSubscriptionsPagination(prev => ({ ...prev, page: 1 }))
+    fetchSubscriptions()
+  }
+
+
   const fetchActivationCodes = async () => {
     if (!token) return
 
@@ -197,8 +283,7 @@ export function AdminClient() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          count: values.count,
-          days: values.days
+          count: values.count
         })
       })
 
@@ -230,7 +315,7 @@ export function AdminClient() {
     setBanModal({
       visible: true,
       user,
-      action: user.subscriptionStatus === 0 ? 'unban' : 'ban'
+      action: user.banned ? 'unban' : 'ban'
     })
   }
 
@@ -245,7 +330,7 @@ export function AdminClient() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          status: banModal.action === 'ban' ? 0 : 1
+          banned: banModal.action === 'ban'
         })
       })
 
@@ -255,7 +340,7 @@ export function AdminClient() {
         return
       }
 
-      message.success(banModal.action === 'ban' ? '订阅已禁用' : '订阅已启用')
+      message.success(banModal.action === 'ban' ? '账号已禁用' : '账号已启用')
       setBanModal({ visible: false, user: null, action: 'ban' })
       fetchUsers()
     } catch (error) {
@@ -285,20 +370,29 @@ export function AdminClient() {
       key: 'role',
       width: 80,
       render: (role) => (
-        <Tag color={role === 'admin' ? 'red' : 'default'}>
+        <Tag color={role === 'admin' ? 'blue' : 'default'}>
           {role === 'admin' ? '管理员' : '用户'}
         </Tag>
       )
+    },
+    {
+      title: '账号状态',
+      dataIndex: 'banned',
+      key: 'banned',
+      width: 100,
+      render: (banned: boolean) => {
+        if (banned) {
+          return <Tag color="red">已禁用</Tag>
+        }
+        return <Tag color="green">正常</Tag>
+      }
     },
     {
       title: '订阅状态',
       dataIndex: 'subscriptionState',
       key: 'subscriptionState',
       width: 120,
-      render: (state: string, record: User) => {
-        if (record.subscriptionStatus === 0) {
-          return <Tag color="red">已禁用</Tag>
-        }
+      render: (state: string) => {
         if (state === 'valid') {
           return <Tag color="green">有效</Tag>
         }
@@ -309,7 +403,7 @@ export function AdminClient() {
       }
     },
     {
-      title: '到期时间',
+      title: '订阅到期时间',
       dataIndex: 'subscriptionExpiresAt',
       key: 'subscriptionExpiresAt',
       width: 150,
@@ -357,13 +451,8 @@ export function AdminClient() {
           return <span style={{ color: '#999' }}>-</span>
         }
 
-        // 如果没有订阅或订阅已过期，不能禁用
-        if (!record.subscriptionExpiresAt || record.subscriptionState === 'none' || record.subscriptionState === 'expired') {
-          return <span style={{ color: '#999' }}>-</span>
-        }
-
         // 如果已被禁用，可以启用
-        if (record.subscriptionStatus === 0) {
+        if (record.banned) {
           return (
             <Button
               icon={<CheckCircleOutlined />}
@@ -374,20 +463,97 @@ export function AdminClient() {
           )
         }
 
-        // 如果有有效订阅，可以禁用
-        if (record.subscriptionState === 'valid') {
-          return (
-            <Button
-              danger
-              icon={<StopOutlined />}
-              onClick={() => handleBan(record)}
-            >
-              禁用
-            </Button>
-          )
-        }
+        // 如果账号正常，可以禁用
+        return (
+          <Button
+            danger
+            icon={<StopOutlined />}
+            onClick={() => handleBan(record)}
+          >
+            禁用
+          </Button>
+        )
+      }
+    }
+  ]
 
-        return <span style={{ color: '#999' }}>-</span>
+  const subscriptionColumns: ColumnsType<Subscription> = [
+    {
+      title: '用户邮箱',
+      dataIndex: ['user', 'email'],
+      key: 'userEmail',
+      width: 180,
+      ellipsis: true
+    },
+    {
+      title: '用户姓名',
+      dataIndex: ['user', 'name'],
+      key: 'userName',
+      width: 120,
+      render: (name: string | null) => name || '-'
+    },
+    {
+      title: '激活码',
+      dataIndex: 'activationCode',
+      key: 'activationCode',
+      width: 250,
+      render: (code: string) => <code style={{ fontFamily: 'monospace' }}>{code}</code>
+    },
+    {
+      title: '订阅状态',
+      dataIndex: 'subscriptionState',
+      key: 'subscriptionState',
+      width: 120,
+      render: (state: string) => {
+        if (state === 'expired') {
+          return <Tag color="orange">已过期</Tag>
+        }
+        return <Tag color="green">有效</Tag>
+      }
+    },
+    {
+      title: '开始时间',
+      dataIndex: 'startAt',
+      key: 'startAt',
+      width: 150,
+      render: (date: string) => {
+        return new Date(date).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+    },
+    {
+      title: '到期时间',
+      dataIndex: 'expiresAt',
+      key: 'expiresAt',
+      width: 150,
+      render: (date: string) => {
+        return new Date(date).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 150,
+      render: (date: string) => {
+        return new Date(date).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
       }
     }
   ]
@@ -405,32 +571,21 @@ export function AdminClient() {
       dataIndex: 'used',
       key: 'used',
       width: 100,
-      render: (used: boolean, record: ActivationCode) => {
-        const now = new Date()
-        const expiresAt = new Date(record.expiresAt)
-        const isExpired = expiresAt < now
-        
+      render: (used: boolean) => {
         if (used) {
           return <Tag color="green">已使用</Tag>
-        }
-        if (isExpired) {
-          return <Tag color="orange">已过期</Tag>
         }
         return <Tag color="blue">未使用</Tag>
       }
     },
     {
       title: '使用用户',
-      key: 'user',
-      width: 150,
-      render: (_: unknown, record: ActivationCode) => {
-        if (record.user) {
-          return (
-            <div>
-              <div>{record.user.email}</div>
-              {record.user.name && <div style={{ color: '#999', fontSize: '12px' }}>{record.user.name}</div>}
-            </div>
-          )
+      dataIndex: 'userEmail',
+      key: 'userEmail',
+      width: 180,
+      render: (email: string | null) => {
+        if (email) {
+          return <span>{email}</span>
         }
         return <span style={{ color: '#999' }}>-</span>
       }
@@ -442,21 +597,6 @@ export function AdminClient() {
       width: 150,
       render: (date: string | null) => {
         if (!date) return <span style={{ color: '#999' }}>-</span>
-        return new Date(date).toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      }
-    },
-    {
-      title: '过期时间',
-      dataIndex: 'expiresAt',
-      key: 'expiresAt',
-      width: 150,
-      render: (date: string) => {
         return new Date(date).toLocaleString('zh-CN', {
           year: 'numeric',
           month: '2-digit',
@@ -559,8 +699,62 @@ export function AdminClient() {
               )
             },
             {
-              key: 'codes',
+              key: 'subscriptions',
               label: '订阅列表',
+              children: (
+                <>
+                  <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: '16px' }}>
+                    <Space>
+                      <Input
+                        placeholder="搜索用户邮箱或姓名"
+                        prefix={<SearchOutlined />}
+                        value={subscriptionsSearch}
+                        onChange={(e) => setSubscriptionsSearch(e.target.value)}
+                        onPressEnter={handleSubscriptionsSearch}
+                        style={{ width: 300 }}
+                        allowClear
+                      />
+                      <Select
+                        value={subscriptionsStatusFilter}
+                        onChange={setSubscriptionsStatusFilter}
+                        style={{ width: 150 }}
+                      >
+                        <Select.Option value="all">全部状态</Select.Option>
+                        <Select.Option value="active">有效订阅</Select.Option>
+                        <Select.Option value="expired">已过期</Select.Option>
+                      </Select>
+                      <Button type="primary" icon={<SearchOutlined />} onClick={handleSubscriptionsSearch}>
+                        搜索
+                      </Button>
+                      <Button icon={<ReloadOutlined />} onClick={fetchSubscriptions}>
+                        刷新
+                      </Button>
+                    </Space>
+                  </Space>
+
+                  <Table
+                    columns={subscriptionColumns}
+                    dataSource={subscriptions}
+                    rowKey="id"
+                    loading={subscriptionsLoading}
+                    pagination={{
+                      current: subscriptionsPagination.page,
+                      pageSize: subscriptionsPagination.pageSize,
+                      total: subscriptionsPagination.total,
+                      showSizeChanger: true,
+                      showTotal: (total) => `共 ${total} 条`,
+                      onChange: (page, pageSize) => {
+                        setSubscriptionsPagination(prev => ({ ...prev, page, pageSize }))
+                      }
+                    }}
+                    scroll={{ x: 1200 }}
+                  />
+                </>
+              )
+            },
+            {
+              key: 'codes',
+              label: '激活码列表',
               children: (
                 <>
                   <Space direction="vertical" size="middle" style={{ width: '100%', marginBottom: '16px' }}>
@@ -594,7 +788,9 @@ export function AdminClient() {
             }
           ]}
           onChange={(key) => {
-            if (key === 'codes' && activationCodes.length === 0) {
+            if (key === 'subscriptions') {
+              fetchSubscriptions()
+            } else if (key === 'codes' && activationCodes.length === 0) {
               fetchActivationCodes()
             }
           }}
@@ -602,7 +798,7 @@ export function AdminClient() {
       </Card>
 
       <Modal
-        title={banModal.action === 'ban' ? '禁用订阅' : '启用订阅'}
+        title={banModal.action === 'ban' ? '禁用账号' : '启用账号'}
         open={banModal.visible}
         onOk={confirmBan}
         onCancel={() => setBanModal({ visible: false, user: null, action: 'ban' })}
@@ -613,11 +809,11 @@ export function AdminClient() {
         }}
       >
         <p>
-          确定要{banModal.action === 'ban' ? '禁用' : '启用'}用户 <strong>{banModal.user?.email}</strong> 的订阅吗？
+          确定要{banModal.action === 'ban' ? '禁用' : '启用'}用户 <strong>{banModal.user?.email}</strong> 的账号吗？
         </p>
         {banModal.action === 'ban' && (
           <p style={{ color: '#ff4d4f', marginTop: '8px' }}>
-            禁用后，该用户将无法使用订阅功能，即使订阅未过期。
+            禁用后，该用户将无法使用所有功能，即使订阅未过期。
           </p>
         )}
       </Modal>
@@ -638,8 +834,7 @@ export function AdminClient() {
           form={createForm}
           layout="vertical"
           initialValues={{
-            count: 1,
-            days: 90
+            count: 1
           }}
         >
           <Form.Item
@@ -655,22 +850,6 @@ export function AdminClient() {
               placeholder="请输入要创建的激活码数量"
               min={1}
               max={100}
-            />
-          </Form.Item>
-          <Form.Item
-            label="有效期（天）"
-            name="days"
-            rules={[
-              { required: true, message: '请输入有效期' },
-              { type: 'number', min: 1, max: 3650, message: '有效期必须在 1-3650 天之间' }
-            ]}
-            help="激活码的有效期，用户需要在此期限内激活"
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="请输入有效期（天）"
-              min={1}
-              max={3650}
             />
           </Form.Item>
         </Form>

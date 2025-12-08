@@ -4,13 +4,13 @@ import { db } from '@/lib/db'
 import { z } from 'zod'
 
 const banSchema = z.object({
-  status: z.number().int().min(0).max(1) // 0=禁用, 1=启用
+  banned: z.boolean() // true=禁用, false=启用
 })
 
 /**
- * 禁用/启用用户订阅（管理员）
+ * 禁用/启用用户账号（管理员）
  * POST /api/admin/users/[id]/ban
- * Body: { status: 0 | 1 }
+ * Body: { banned: true | false }
  */
 export async function POST(
   request: NextRequest,
@@ -40,13 +40,13 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { status } = banSchema.parse(body)
+    const { banned } = banSchema.parse(body)
     const { id: targetUserId } = await params
 
     // 不能禁用自己
     if (targetUserId === authUser.userId) {
       return NextResponse.json(
-        { error: '不能禁用自己的订阅' },
+        { error: '不能禁用自己' },
         { status: 400 }
       )
     }
@@ -64,35 +64,35 @@ export async function POST(
       )
     }
 
-    // 不能禁用其他管理员的订阅
+    // 不能禁用其他管理员
     if (targetUser.role === 'admin') {
       return NextResponse.json(
-        { error: '不能禁用管理员的订阅' },
+        { error: '不能禁用管理员' },
         { status: 403 }
       )
     }
 
-    // 更新订阅状态
+    // 更新账号禁用状态
     const updatedUser = await db.user.update({
       where: { id: targetUserId },
       data: {
-        subscriptionStatus: status
+        banned: banned
       },
       select: {
         id: true,
         email: true,
-        subscriptionStatus: true,
+        banned: true,
         subscriptionExpiresAt: true
       }
     })
 
     return NextResponse.json({
       success: true,
-      message: status === 0 ? '订阅已禁用' : '订阅已启用',
+      message: banned ? '账号已禁用' : '账号已启用',
       data: {
         id: updatedUser.id,
         email: updatedUser.email,
-        subscriptionStatus: updatedUser.subscriptionStatus,
+        banned: updatedUser.banned,
         subscriptionExpiresAt: updatedUser.subscriptionExpiresAt
       }
     })

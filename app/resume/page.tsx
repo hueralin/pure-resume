@@ -43,6 +43,26 @@ export default function ResumeListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, router])
 
+  const handleApiError = async (response: Response): Promise<boolean> => {
+    if (!response.ok) {
+      const error = await response.json()
+      
+      // 处理账号被禁用
+      if (error.code === 'ACCOUNT_BANNED') {
+        clearAuth()
+        modal.error({
+          title: '账号已被禁用',
+          content: error.error || '您的账号已被禁用，无法使用此功能。',
+          onOk: () => {
+            router.push('/login')
+          }
+        })
+        return true
+      }
+    }
+    return false
+  }
+
   const fetchResumes = async () => {
     try {
       const response = await fetch('/api/resumes', {
@@ -50,6 +70,10 @@ export default function ResumeListPage() {
           'Authorization': `Bearer ${token}`,
         },
       })
+
+      if (await handleApiError(response)) {
+        return
+      }
 
       if (response.ok) {
         const data = await response.json()
@@ -101,6 +125,20 @@ export default function ResumeListPage() {
 
         if (!response.ok) {
           const error = await response.json()
+          
+          // 处理账号被禁用
+          if (error.code === 'ACCOUNT_BANNED') {
+            clearAuth()
+            modal.error({
+              title: '账号已被禁用',
+              content: error.error || '您的账号已被禁用，无法使用此功能。',
+              onOk: () => {
+                router.push('/login')
+              }
+            })
+            return
+          }
+          
           throw new Error(error.error || '创建失败')
         }
 
@@ -186,6 +224,10 @@ export default function ResumeListPage() {
               'Authorization': `Bearer ${authToken}`,
             },
           })
+
+          if (await handleApiError(response)) {
+            return
+          }
 
           if (!response.ok) {
             const error = await response.json()
