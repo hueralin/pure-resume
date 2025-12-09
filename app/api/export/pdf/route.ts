@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
             }
             html, body {
               width: 100%;
-              height: 100%;
+              /* Removed height: 100% to allow content to determine height */
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
               line-height: 1.6;
               color: #333;
@@ -85,14 +85,22 @@ export async function POST(request: NextRequest) {
     
     // 获取内容容器的实际高度
     const contentHeight = await page.evaluate(() => {
-      // 查找简历容器（宽度595px的div）
-      const container = document.querySelector('body > div[style*="width: 595px"]') as HTMLElement
+      // 优先查找 ID 为 resume-container 的元素
+      const container = document.getElementById('resume-container')
       if (container) {
-        // 使用getBoundingClientRect获取精确高度，包括padding
+        // 使用getBoundingClientRect获取精确高度
         const rect = container.getBoundingClientRect()
         return Math.ceil(rect.height)
       }
-      // 如果没有找到，使用body的高度
+
+      // 备选：查找宽度为 595px 的 div
+      const widthContainer = document.querySelector('body > div[style*="width: 595px"]') as HTMLElement
+      if (widthContainer) {
+        const rect = widthContainer.getBoundingClientRect()
+        return Math.ceil(rect.height)
+      }
+
+      // 如果没有找到，使用body的高度，但要避免 full viewport height
       const body = document.body
       const html = document.documentElement
       return Math.ceil(Math.max(
@@ -144,4 +152,3 @@ export async function POST(request: NextRequest) {
   }
   })(request)
 }
-

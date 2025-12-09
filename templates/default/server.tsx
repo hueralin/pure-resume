@@ -25,6 +25,7 @@ function getProficiencyWidth(proficiency: string): string {
     '熟练': '60%',
     '精通': '78%',
     '专家': '84%',
+    'master': '100%',
   }
   return map[proficiency] || '50%'
 }
@@ -49,6 +50,7 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
   const styles = {
     container: {
       width: '595px',
+      // minHeight: '842px', // Removed to avoid whitespace in PDF if content is short
       backgroundColor: '#ffffff',
       color: '#212121',
       fontFamily: 'Hind, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -103,30 +105,24 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
       fontSize: '13px',
       letterSpacing: '0.2px',
       lineHeight: '15px',
-      marginBottom: '30px',
+      marginBottom: '15px',
     },
     mainContent: {
       display: 'flex',
-      gap: '47px',
-    },
-    leftColumn: {
-      flex: 1,
-      maxWidth: '400px',
-    },
-    rightColumn: {
-      width: '168px',
+      flexDirection: 'column' as const,
+      gap: '24px',
     },
     itemRow: {
       display: 'flex',
+      justifyContent: 'space-between',
       alignItems: 'baseline',
-      gap: '10px',
       marginBottom: '4px',
     },
     dateText: {
       fontSize: '10px',
       opacity: 0.5,
       lineHeight: '18px',
-      width: '80px',
+      flexShrink: 0,
     },
     itemTitle: {
       fontFamily: 'IBM Plex Sans, -apple-system, BlinkMacSystemFont, sans-serif',
@@ -135,8 +131,12 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
     },
     itemDesc: {
       opacity: 0.6,
-      marginLeft: '90px',
       whiteSpace: 'pre-wrap' as const,
+    },
+    skillGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '8px 32px',
     },
     skillRow: {
       display: 'flex',
@@ -149,7 +149,6 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
       backgroundColor: '#EDEDED',
       borderRadius: '9999px',
       position: 'relative' as const,
-      marginBottom: '7px',
     },
     progressFill: {
       position: 'absolute' as const,
@@ -159,14 +158,13 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
     },
     certRow: {
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: 'column' as const,
       lineHeight: '19px',
-      marginBottom: '5px',
     },
   }
 
   return (
-    <div style={styles.container}>
+    <div id="resume-container" style={styles.container}>
       {/* 头部区域 */}
       <div style={styles.header}>
         {/* 头像 */}
@@ -186,7 +184,7 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
             {basicInfo.name || '您的姓名'}
           </h1>
 
-          {/* 联系方式 - 两列布局（与预览一致：title, phone, email, location） */}
+          {/* 联系方式 - 两列布局 */}
           <div style={styles.contactGrid}>
             <div style={styles.contactColumn}>
               {basicInfo.title && <div>{basicInfo.title}</div>}
@@ -219,154 +217,150 @@ export function DefaultTemplateServer({ data }: DefaultTemplateProps) {
         </>
       )}
 
-      {/* 主体内容区 - 两栏布局 */}
+      {/* 主体内容区 - 单栏布局 */}
       <div style={styles.mainContent}>
-        {/* 左栏 */}
-        <div style={styles.leftColumn}>
-          {/* 教育背景 */}
-          {getModuleItems(educationModule).length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h2 style={styles.sectionTitle}>
-                教育经历
-              </h2>
-              <div>
-                {getModuleItems(educationModule).map((item: any, index: number) => {
-                  const items = getModuleItems(educationModule)
-                  return (
-                  <div key={index} style={{ marginBottom: index < items.length - 1 ? '16px' : 0 }}>
-                    <div style={styles.itemRow}>
-                      <span style={styles.dateText}>
-                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
-                      </span>
-                      <span style={styles.itemTitle}>
-                        {item.school}
-                      </span>
-                    </div>
-                    {(item.major || item.degree || item.description) && (
-                      <div style={styles.itemDesc}>
-                        {item.degree && item.major ? `${item.degree}，${item.major}` : item.major || item.degree}
-                        {item.description && <div style={{ marginTop: '4px' }}>{item.description}</div>}
-                      </div>
-                    )}
-                  </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 工作经历 */}
-          {getModuleItems(workModule).length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h2 style={styles.sectionTitle}>
-                工作经历
-              </h2>
-              <div>
-                {getModuleItems(workModule).map((item: any, index: number) => (
-                  <div key={index} style={{ marginBottom: index < getModuleItems(workModule).length - 1 ? '16px' : 0 }}>
-                    <div style={styles.itemRow}>
-                      <span style={styles.dateText}>
-                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
-                      </span>
-                      <span style={styles.itemTitle}>
-                        {item.position}{item.company ? ` @ ${item.company}` : ''}
-                      </span>
-                    </div>
-                    {item.description && (
-                      <div style={styles.itemDesc}>
-                        {item.description}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 项目经历 */}
-          {getModuleItems(projectModule).length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h2 style={styles.sectionTitle}>
-                项目经历
-              </h2>
-              <div>
-                {getModuleItems(projectModule).map((item: any, index: number) => (
-                  <div key={index} style={{ marginBottom: index < getModuleItems(projectModule).length - 1 ? '16px' : 0 }}>
-                    <div style={styles.itemRow}>
-                      <span style={styles.dateText}>
-                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
-                      </span>
-                      <span style={styles.itemTitle}>
-                        {item.projectName}{item.role ? ` · ${item.role}` : ''}
-                      </span>
-                    </div>
-                    {item.description && (
-                      <div style={styles.itemDesc}>
-                        {item.description}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 右栏 */}
-        <div style={styles.rightColumn}>
-          {/* 技能 */}
-          {getModuleItems(skillsModule).filter((item: any) => item.skillName).length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h2 style={styles.sectionTitle}>
-                专业技能
-              </h2>
-              <div>
-                {getModuleItems(skillsModule).filter((item: any) => item.skillName).map((item: any, index: number) => (
-                  <div key={index}>
-                    <div style={styles.skillRow}>
-                      <span style={styles.itemTitle}>
-                        {item.skillName}
-                      </span>
-                      <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px' }}>
-                        {item.proficiency}
-                      </span>
-                    </div>
-                    {/* 进度条 */}
-                    <div style={styles.progressBar}>
-                      <div 
-                        style={{ 
-                          ...styles.progressFill,
-                          width: getProficiencyWidth(item.proficiency),
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 证书 */}
-          {getModuleItems(certificationsModule).filter((item: any) => item.certName).length > 0 && (
+        {/* 教育背景 */}
+        {getModuleItems(educationModule).length > 0 && (
+          <div>
+            <h2 style={styles.sectionTitle}>
+              教育经历
+            </h2>
             <div>
-              <h2 style={styles.sectionTitle}>
-                证书荣誉
-              </h2>
-              <div>
-                {getModuleItems(certificationsModule).filter((item: any) => item.certName).map((item: any, index: number) => (
-                  <div key={index} style={styles.certRow}>
-                    <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px', marginBottom: '4px' }}>
-                      {formatFullDate(item.issueDate)}
+              {getModuleItems(educationModule).map((item: any, index: number) => {
+                const items = getModuleItems(educationModule)
+                return (
+                <div key={index} style={{ marginBottom: index < items.length - 1 ? '16px' : 0 }}>
+                  <div style={styles.itemRow}>
+                    <span style={styles.itemTitle}>
+                      {item.school}
                     </span>
+                    <span style={styles.dateText}>
+                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                    </span>
+                  </div>
+                  {(item.major || item.degree || item.description) && (
+                    <div style={styles.itemDesc}>
+                      {item.degree && item.major ? `${item.degree}，${item.major}` : item.major || item.degree}
+                      {item.description && <div style={{ marginTop: '4px' }}>{item.description}</div>}
+                    </div>
+                  )}
+                </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 工作经历 */}
+        {getModuleItems(workModule).length > 0 && (
+          <div>
+            <h2 style={styles.sectionTitle}>
+              工作经历
+            </h2>
+            <div>
+              {getModuleItems(workModule).map((item: any, index: number) => (
+                <div key={index} style={{ marginBottom: index < getModuleItems(workModule).length - 1 ? '16px' : 0 }}>
+                  <div style={styles.itemRow}>
+                    <span style={styles.itemTitle}>
+                      {item.position}{item.company ? ` @ ${item.company}` : ''}
+                    </span>
+                    <span style={styles.dateText}>
+                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                    </span>
+                  </div>
+                  {item.description && (
+                    <div style={styles.itemDesc}>
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 项目经历 */}
+        {getModuleItems(projectModule).length > 0 && (
+          <div>
+            <h2 style={styles.sectionTitle}>
+              项目经历
+            </h2>
+            <div>
+              {getModuleItems(projectModule).map((item: any, index: number) => (
+                <div key={index} style={{ marginBottom: index < getModuleItems(projectModule).length - 1 ? '16px' : 0 }}>
+                  <div style={styles.itemRow}>
+                    <span style={styles.itemTitle}>
+                      {item.projectName}{item.role ? ` · ${item.role}` : ''}
+                    </span>
+                    <span style={styles.dateText}>
+                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                    </span>
+                  </div>
+                  {item.description && (
+                    <div style={styles.itemDesc}>
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 技能 */}
+        {getModuleItems(skillsModule).filter((item: any) => item.skillName).length > 0 && (
+          <div>
+            <h2 style={styles.sectionTitle}>
+              专业技能
+            </h2>
+            <div style={styles.skillGrid}>
+              {getModuleItems(skillsModule).filter((item: any) => item.skillName).map((item: any, index: number) => (
+                <div key={index}>
+                  <div style={styles.skillRow}>
+                    <span style={styles.itemTitle}>
+                      {item.skillName}
+                    </span>
+                    <span style={{ fontSize: '10px', opacity: 0.5, lineHeight: '18px' }}>
+                      {item.proficiency}
+                    </span>
+                  </div>
+                  {/* 进度条 */}
+                  <div style={styles.progressBar}>
+                    <div 
+                      style={{ 
+                        ...styles.progressFill,
+                        width: getProficiencyWidth(item.proficiency),
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 证书 */}
+        {getModuleItems(certificationsModule).filter((item: any) => item.certName).length > 0 && (
+          <div>
+            <h2 style={styles.sectionTitle}>
+              证书荣誉
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              {getModuleItems(certificationsModule).filter((item: any) => item.certName).map((item: any, index: number) => (
+                <div key={index} style={styles.certRow}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <span style={styles.itemTitle}>
                       {item.certName}
                     </span>
+                    <span style={styles.dateText}>
+                      {formatFullDate(item.issueDate)}
+                    </span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
