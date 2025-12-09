@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/store'
 import { Button, Input, App, Modal } from 'antd'
-import { LogoutOutlined, FullscreenOutlined, FullscreenExitOutlined, SettingOutlined } from '@ant-design/icons'
+import { LogoutOutlined, FullscreenOutlined, FullscreenExitOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons'
 import { useToast } from '@/lib/toast'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ResumeCard } from '@/components/resume/resume-card'
@@ -273,6 +273,12 @@ export default function ResumeListPage() {
                 title="管理后台"
               />
             )}
+            <Button
+              type="default"
+              icon={<UserOutlined />}
+              onClick={() => router.push('/profile')}
+              title="个人中心"
+            />
             <Button 
               type="default"
               icon={<LogoutOutlined />}
