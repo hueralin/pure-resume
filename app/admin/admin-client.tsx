@@ -693,7 +693,7 @@ export function AdminClient() {
                         setPagination(prev => ({ ...prev, page, pageSize }))
                       }
                     }}
-                    scroll={{ x: 1200 }}
+                    scroll={{ x: 1000 }}
                   />
                 </>
               )
@@ -747,7 +747,7 @@ export function AdminClient() {
                         setSubscriptionsPagination(prev => ({ ...prev, page, pageSize }))
                       }
                     }}
-                    scroll={{ x: 1200 }}
+                    scroll={{ x: 1000 }}
                   />
                 </>
               )
@@ -781,7 +781,7 @@ export function AdminClient() {
                       showSizeChanger: true,
                       showTotal: (total) => `共 ${total} 条`
                     }}
-                    scroll={{ x: 1200 }}
+                    scroll={{ x: 1000 }}
                   />
                 </>
               )
