@@ -1,0 +1,42 @@
+version: "3.8" # 使用 Docker Compose V3.8 语法版本
+
+services:
+  app:
+    # 构建配置：使用当前目录(.)下的 Dockerfile 构建镜像
+    build: .
+    
+    # 容器名称：指定一个固定名称，方便后续查看日志 (如 docker logs resume_app)
+    container_name: resume_app
+    
+    # 重启策略：如果容器崩溃或服务器重启，总是自动重启该容器
+    restart: always
+    
+    # 端口映射：[宿主机端口]:[容器内部端口]
+    # "${HOST_PORT:-3000}" 意为：优先读取环境变量 HOST_PORT，如果未设置则默认用 3000
+    # 容器内部端口必须是 3000 (因为 Next.js 默认监听 3000)
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+      
+    # 环境变量：注入到容器内部，供 Node.js (process.env) 使用
+    environment:
+      # 告诉 Next.js 在容器内监听哪个端口
+      - PORT=3000
+      
+      # 数据库连接串
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # 您的自定义 JWT 认证密钥 (对应 lib/auth.ts 中的使用)
+      - JWT_SECRET=${JWT_SECRET:-please_change_this_secret_in_prod}
+      
+      # 订阅有效期配置 (如果代码里用了这个环境变量)
+      - SUBSCRIPTION_DURATION_DAYS=${SUBSCRIPTION_DURATION_DAYS:-30}
+      
+      # Puppeteer 配置
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+
+    # 启动命令覆盖：
+    # 1. pnpm dlx prisma migrate deploy: 部署时自动同步数据库表结构 (Schema)
+    # 2. &&: 只有迁移成功才继续执行
+    # 3. pnpm start: 启动 Next.js 生产服务器
+    command: >
+      sh -c "pnpm dlx prisma migrate deploy && pnpm start"
