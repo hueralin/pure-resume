@@ -2,25 +2,12 @@
 FROM node:20-slim AS base
 
 # -----------------------------------------------------------------------------
-# 1. 系统依赖安装 (Puppeteer/Chrome 专用)
+# 1. 系统依赖安装
 # -----------------------------------------------------------------------------
 # 环境变量配置：
-# PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true: 禁止 Puppeteer 自动下载 Chromium (体积大且缺依赖)
-# PUPPETEER_EXECUTABLE_PATH: 告诉 Puppeteer 使用我们手动安装的 Chrome
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
-# 安装 Chrome 及其运行所需的系统库、中文字体
-# fonts-wqy-zenhei 等字体包至关重要，否则生成的 PDF 中文会乱码
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
-      --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+# PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true: 禁止 Puppeteer 自动下载 Chromium
+# 注意：当前配置未安装 Chrome，PDF 导出功能将不可用
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # 设置容器内工作目录
 WORKDIR /app

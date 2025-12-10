@@ -31,8 +31,8 @@ services:
       # 订阅有效期配置 (如果代码里用了这个环境变量)
       - SUBSCRIPTION_DURATION_DAYS=${SUBSCRIPTION_DURATION_DAYS:-30}
       
-      # Puppeteer 配置
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+      # Puppeteer 配置 (已禁用 Chrome，此变量可选或移除)
+      # - PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
     # 启动命令覆盖：
     # 1. pnpm dlx prisma migrate deploy: 部署时自动同步数据库表结构 (Schema)
